@@ -1,5 +1,310 @@
-cd tu-repo-local
-wget https://raw.githubusercontent.com/LMMtool/lmm-tools/main/index.html
-git add index.html
-git commit -m "Add landing page"
-git push origin main
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMM Ingeniería Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #ffffff;
+            color: #1a1a1a;
+        }
+        
+        body { padding: 0; }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e8ecf1 100%);
+            padding: 3rem 1.5rem;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 3rem;
+        }
+        
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+        }
+        
+        .hero p {
+            font-size: 16px;
+            color: #666666;
+        }
+        
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 3rem;
+        }
+        
+        .cat-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .cat-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+        }
+        
+        .cat-card .icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        
+        .cat-card h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+        }
+        
+        .cat-card p {
+            font-size: 14px;
+            color: #888888;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 2rem 0 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 2rem;
+        }
+        
+        .tool-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        
+        .tool-card:hover {
+            border-color: #3b82f6;
+            background: #f0f4ff;
+        }
+        
+        .tool-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .tool-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        
+        .tool-type {
+            font-size: 12px;
+            color: #999999;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            border-top: 1px solid #e0e0e0;
+            font-size: 12px;
+            color: #999999;
+            margin-top: 3rem;
+        }
+        
+        .footer a {
+            color: #3b82f6;
+            text-decoration: none;
+            margin: 0 8px;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            html, body {
+                background: #1a1a1a;
+                color: #ffffff;
+            }
+            
+            .hero {
+                background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+            }
+            
+            .hero h1 {
+                color: #ffffff;
+            }
+            
+            .hero p {
+                color: #aaaaaa;
+            }
+            
+            .cat-card {
+                background: #2a2a2a;
+                border-color: #444444;
+            }
+            
+            .cat-card:hover {
+                border-color: #3b82f6;
+                box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+            }
+            
+            .cat-card h2 {
+                color: #ffffff;
+            }
+            
+            .cat-card p {
+                color: #aaaaaa;
+            }
+            
+            .section-title {
+                color: #ffffff;
+            }
+            
+            .tool-card {
+                background: #2a2a2a;
+                border-color: #444444;
+            }
+            
+            .tool-card:hover {
+                border-color: #3b82f6;
+                background: #1e2a4a;
+            }
+            
+            .tool-name {
+                color: #ffffff;
+            }
+            
+            .tool-type {
+                color: #888888;
+            }
+            
+            .footer {
+                border-top-color: #444444;
+                color: #888888;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>LMM Ingeniería Tools</h1>
+            <p>Herramientas profesionales para agua, saneamiento y vías</p>
+        </div>
+        
+        <div class="categories">
+            <div class="cat-card">
+                <div class="icon">💧</div>
+                <h2>Agua</h2>
+                <p>Acueductos, bombas, hidráulica</p>
+            </div>
+            <div class="cat-card">
+                <div class="icon">🚰</div>
+                <h2>Saneamiento</h2>
+                <p>Alcantarillado, PTAR, drenajes</p>
+            </div>
+            <div class="cat-card">
+                <div class="icon">🛣️</div>
+                <h2>Vías</h2>
+                <p>Diseño geométrico, pavimentos</p>
+            </div>
+        </div>
+        
+        <h2 class="section-title">💧 Agua</h2>
+        <div class="tools-grid">
+            <a href="https://raw.githubusercontent.com/LMMtool/lmm-tools/main/agua/pdfs/placeholder.pdf" class="tool-card" download>
+                <div class="tool-icon">📄</div>
+                <div class="tool-name">Hidráulica</div>
+                <div class="tool-type">PDF</div>
+            </a>
+            <a href="https://raw.githubusercontent.com/LMMtool/lmm-tools/main/agua/excel/placeholder.xlsx" class="tool-card" download>
+                <div class="tool-icon">📊</div>
+                <div class="tool-name">Bombas</div>
+                <div class="tool-type">Excel</div>
+            </a>
+            <a href="https://raw.githubusercontent.com/LMMtool/lmm-tools/main/agua/pdfs/placeholder.pdf" class="tool-card" download>
+                <div class="tool-icon">📄</div>
+                <div class="tool-name">Acueductos</div>
+                <div class="tool-type">PDF</div>
+            </a>
+        </div>
+        
+        <h2 class="section-title">🚰 Saneamiento</h2>
+        <div class="tools-grid">
+            <a href="https://raw.githubusercontent.com/LMMtool/lmm-tools/main/saneamiento/pdfs/placeholder.pdf" class="tool-card" download>
+                <div class="tool-icon">📄</div>
+                <div class="tool-name">PTAR</div>
+                <div class="tool-type">PDF</div>
+            </a>
+            <a href="https://raw.githubusercontent.com/LMMtool/lmm-tools/main/saneamiento/excel/placeholder.xlsx" class="tool-card" download>
+                <div class="tool-icon">📊</div>
+                <div class="tool-name">Alcantarillado</div>
+                <div class="tool-type">Excel</div>
+            </a>
+            <a href="https://raw.githubusercontent.com/LMMtool/lmm-tools/main/saneamiento/pdfs/placeholder.pdf" class="tool-card" download>
+                <div class="tool-icon">📄</div>
+                <div class="tool-name">Drenajes</div>
+                <div class="tool-type">PDF</div>
+            </a>
+        </div>
+        
+        <h2 class="section-title">🛣️ Vías</h2>
+        <div class="tools-grid">
+            <a href="https://raw.githubusercontent.com/LMMtool/lmm-tools/main/vias/pdfs/placeholder.pdf" class="tool-card" download>
+                <div class="tool-icon">📄</div>
+                <div class="tool-name">Diseño Geométrico</div>
+                <div class="tool-type">PDF</div>
+            </a>
+            <a href="https://raw.githubusercontent.com/LMMtool/lmm-tools/main/vias/excel/placeholder.xlsx" class="tool-card" download>
+                <div class="tool-icon">📊</div>
+                <div class="tool-name">Pavimentos</div>
+                <div class="tool-type">Excel</div>
+            </a>
+            <a href="https://raw.githubusercontent.com/LMMtool/lmm-tools/main/vias/pdfs/placeholder.pdf" class="tool-card" download>
+                <div class="tool-icon">📄</div>
+                <div class="tool-name">Drenaje Vial</div>
+                <div class="tool-type">PDF</div>
+            </a>
+        </div>
+        
+        <div class="footer">
+            <p>© 2026 LMM Ingeniería | 
+            <a href="https://github.com/LMMtool/lmm-tools">GitHub</a> | 
+            <a href="#">LinkedIn</a></p>
+        </div>
+    </div>
+</body>
+</html>
