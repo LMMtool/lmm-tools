@@ -1,0 +1,17 @@
+{
+  "active_version": "v1.0",
+  "available_versions": ["v1.0"],
+  "source": "REP-2021 (Reglamento Estructural Panameño)",
+  "source_legal": "Gaceta Oficial Digital N° 29594-A, 5 de agosto de 2022. Resolución JTIA-020-2022.",
+  "published": "2026-05-15",
+  "last_updated": "2026-05-15",
+  "developer": "LMM Ingeniería",
+  "license": "MIT",
+  "changelog": [
+    {
+      "version": "v1.0",
+      "date": "2026-05-15",
+      "notes": "Lanzamiento inicial. Mapas oficiales REP-21 (PGA, Ss, S1). Calculadora de coeficiente sísmico Cs según ASCE 7-05 con modificaciones REP-21."
+    }
+  ]
+}
