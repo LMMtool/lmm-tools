@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nomograma de Tuber&#237;as &#8212; LMM Ingenier&#237;a</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@400;600&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#fefcf9; color:#4a4a4a; font-family:'Libre Baskerville','Georgia',serif; }
+  .wrap { max-width:1020px; margin:0 auto; padding:20px 16px; }
+  h1 { font-size:22px; font-weight:400; color:#1a3c5e; letter-spacing:6px; text-transform:uppercase; text-align:center; margin:0; }
+  .gold-line { width:180px; height:2px; background:#c8963e; margin:8px auto; opacity:.5; }
+  .subtitle { text-align:center; font-size:12px; color:#7a7a7a; letter-spacing:1px; margin-bottom:14px; }
+  .btns { display:flex; justify-content:center; gap:8px; margin-bottom:14px; }
+  .btns button { padding:8px 24px; border:1.5px solid #d0ccc4; border-radius:4px; background:#fff; color:#4a4a4a; font-size:13px; font-family:'Source Sans 3','Segoe UI',sans-serif; font-weight:400; cursor:pointer; transition:all .2s; }
+  .btns button.active { background:#1a3c5e; color:#fff; border-color:#c8963e; font-weight:600; }
+  .chart-wrap { position:relative; }
+  svg { display:block; width:100%; border-radius:6px; border:1px solid #d0ccc4; cursor:crosshair; }
+  .footer { display:flex; justify-content:space-between; align-items:center; border-top:1px solid #d0ccc4; padding-top:8px; margin-top:12px; flex-wrap:wrap; gap:6px; }
+  .footer .formula { font-size:9px; color:#7a7a7a; font-family:'Source Sans 3',sans-serif; }
+  .footer .firma { font-size:10px; color:#1a3c5e; opacity:.6; white-space:nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Nomograma de Tuber&#237;as</h1>
+  <div class="gold-line"></div>
+  <div class="subtitle">Manning &#8226; Tirante d/D = 0.81 &#8226; &#216;18&#8243;&#8211;36&#8243;</div>
+  <div class="btns">
+    <button class="active" onclick="setMat('PVC',this)">PVC (n=0.009)</button>
+    <button onclick="setMat('Concreto',this)">Concreto (n=0.013)</button>
+  </div>
+  <div class="chart-wrap">
+    <svg id="chart" viewBox="0 0 900 560"></svg>
+  </div>
+  <div class="footer">
+    <span class="formula">Manning (d/D=0.81) &#8226; V=(1/n)&#183;Rh&#178;&#702;&#179;&#183;S&#185;&#702;&#178; &#8226; Q=V&#183;A</span>
+    <span class="firma">Ing. Luis M&#225;rquez &nbsp;|&nbsp; LMM Ingenier&#237;a &nbsp;|&nbsp; lmarquez@lmmingenieria.com</span>
+  </div>
+</div>
+
+<script>
+const TIRANTE=.81, DIAMS=[18,20,24,30,36];
+const MATS={PVC:.009,Concreto:.013};
+const COL=['#8b3a3a','#b87333','#2e6b4f','#2c5f8a','#5b4a8a'];
+const FILLA=['rgba(139,58,58,.12)','rgba(184,115,51,.12)','rgba(46,107,79,.12)','rgba(44,95,138,.12)','rgba(91,74,138,.12)'];
+const BR='#1a3c5e',GD='#c8963e',MD='#4a4a4a',LT='#7a7a7a',BG='#fefcf9',GR='#d0ccc4';
+const VL=[.6,1,2,3,4,5],VLB=['0.6 (min)','1.0','2.0','3.0 (max rec.)','4.0','5.0 (lim)'];
+const VC=['#8b6914','#8b6914','#6b6b6b','#8b3a3a','#8b3a3a','#5a1a1a'];
+const VD=['8,5','5,4','5,4','10,4,3,4','5,4','3,3'],VW=[1.3,.8,.8,1.6,.8,1.8];
+
+const W=900,H=560,PT=50,PR=70,PB=55,PL=70,PW=W-PL-PR,PH=H-PT-PB;
+let curMat='PVC',curN=.009;
+
+function mp(d,s,n){const dm=d*.0254,sd=s/100,th=2*Math.acos(1-2*TIRANTE),A=dm*dm/8*(th-Math.sin(th)),P=dm*th/2,Rh=A/P,v=1/n*Math.pow(Rh,2/3)*Math.pow(sd,.5);return{q:v*A,v};}
+function sfv(d,vt,n){const dm=d*.0254,th=2*Math.acos(1-2*TIRANTE),A=dm*dm/8*(th-Math.sin(th)),P=dm*th/2,Rh=A/P;return Math.pow(vt*n/Math.pow(Rh,2/3),2)*100;}
+function fq(q){return q>=1?q.toFixed(2):q>=.1?q.toFixed(3):q.toFixed(4);}
+function vs(v){return v<.6?{t:'Baja',c:'#8b6914'}:v<=3?{t:'OK',c:'#2e6b4f'}:v<=5?{t:'Alta',c:'#8b3a3a'}:{t:'Excesiva',c:'#5a1a1a'};}
+
+let maxS,xMn=.05,yMn,yMx,slopes=[];
+
+function calcRange(){
+  let ms=Math.min(sfv(DIAMS[0],5,curN)*1.05,5.9);ms=Math.ceil(ms*2)/2;if(ms>5.5)ms=5.5;maxS=ms;
+  const qs=DIAMS.flatMap(d=>[mp(d,xMn,curN).q,mp(d,maxS,curN).q]);
+  yMn=Math.min(...qs)*.55;yMx=Math.max(...qs)*1.5;
+  slopes=[];for(let i=0;i<200;i++)slopes.push(xMn+i/199*(maxS-xMn));
+}
+
+function sx(v){return PL+(v-xMn)/(maxS-xMn)*PW;}
+function sy(v){return PT+PH-(Math.log(v)-Math.log(yMn))/(Math.log(yMx)-Math.log(yMn))*PH;}
+function ix(px){return xMn+(px-PL)/PW*(maxS-xMn);}
+function iy(py){return Math.exp(Math.log(yMn)+(PT+PH-py)/PH*(Math.log(yMx)-Math.log(yMn)));}
+
+function ns(tag,attrs,txt){
+  const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
+  if(attrs)Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k.replace(/([A-Z])/g,'-$1').toLowerCase(),v));
+  if(txt)el.textContent=txt;return el;
+}
+
+function draw(){
+  calcRange();
+  const svg=document.getElementById('chart');
+  svg.innerHTML='';
+
+  // Defs
+  const defs=ns('defs');
+  defs.innerHTML='<filter id="sh"><feDropShadow dx="1" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,.08)"/></filter>';
+  svg.appendChild(defs);
+
+  // Grid Y
+  const yT=[.05,.08,.1,.15,.2,.3,.5,.7,1,1.5,2,3,5].filter(v=>v>=yMn&&v<=yMx);
+  yT.forEach(v=>{
+    svg.appendChild(ns('line',{x1:PL,x2:W-PR,y1:sy(v),y2:sy(v),stroke:GR,strokeWidth:.5}));
+    svg.appendChild(ns('text',{x:PL-6,y:sy(v),textAnchor:'end',dominantBaseline:'middle',fill:MD,fontSize:10},fq(v)));
+    svg.appendChild(ns('text',{x:W-PR+6,y:sy(v),textAnchor:'start',dominantBaseline:'middle',fill:LT,fontSize:10},Math.round(v*1000)+''));
+  });
+
+  // Grid X
+  const step=maxS<=4?.5:1;
+  for(let v=step;v<=maxS;v+=step){
+    const vr=Math.round(v*10)/10;
+    svg.appendChild(ns('line',{x1:sx(vr),x2:sx(vr),y1:PT,y2:H-PB,stroke:GR,strokeWidth:.5}));
+    svg.appendChild(ns('text',{x:sx(vr),y:H-PB+16,textAnchor:'middle',fill:MD,fontSize:10},vr+'%'));
+  }
+
+  // Axis labels
+  const xl=ns('text',{x:W/2,y:H-4,textAnchor:'middle',fill:BR,fontSize:12},'Pendiente (%) = (cm/m)');svg.appendChild(xl);
+  const yl=ns('text',{x:14,y:H/2,textAnchor:'middle',fill:BR,fontSize:11,transform:`rotate(-90,14,${H/2})`},'Caudal a tirante 81% (m\u00b3/s)');svg.appendChild(yl);
+  const yr=ns('text',{x:W-8,y:H/2,textAnchor:'middle',fill:LT,fontSize:10,transform:`rotate(90,${W-8},${H/2})`},'Caudal (L/s)');svg.appendChild(yr);
+
+  // Fill areas
+  const curves=DIAMS.map(d=>slopes.map(s=>{const r=mp(d,s,curN);return{x:sx(s),y:sy(r.q)};}));
+  for(let i=0;i<curves.length-1;i++){
+    let p=curves[i].map((pt,j)=>(j?'L':'M')+pt.x.toFixed(1)+','+pt.y.toFixed(1)).join(' ');
+    p+=' '+[...curves[i+1]].reverse().map(pt=>'L'+pt.x.toFixed(1)+','+pt.y.toFixed(1)).join(' ')+'Z';
+    svg.appendChild(ns('path',{d:p,fill:FILLA[i+1]}));
+  }
+
+  // Iso-velocity
+  const thC=2*Math.acos(1-2*TIRANTE),rhF=(thC-Math.sin(thC))/(4*thC),aF=(thC-Math.sin(thC))/8;
+  const dMn=DIAMS[0]*.0254,dMx=DIAMS[4]*.0254;
+  VL.forEach((vt,vi)=>{
+    const pts=[];
+    slopes.forEach(s=>{const sd=s/100;if(sd<=0)return;
+      const Dn=Math.pow(vt*curN/(Math.pow(rhF,2/3)*Math.pow(sd,.5)),1.5);
+      if(Dn>=dMn*.8&&Dn<=dMx*1.2){const q=vt*Dn*Dn*aF;if(q>=yMn&&q<=yMx)pts.push({x:sx(s),y:sy(q)});}
+    });
+    if(pts.length>1){
+      svg.appendChild(ns('path',{d:pts.map((p,j)=>(j?'L':'M')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' '),fill:'none',stroke:VC[vi],strokeWidth:VW[vi],strokeDasharray:VD[vi],opacity:.5}));
+      const lp=pts[pts.length-1];
+      svg.appendChild(ns('text',{x:lp.x+3,y:lp.y-3,fill:VC[vi],fontSize:7,opacity:.7},'V='+VLB[vi]));
+    }
+  });
+
+  // Main curves
+  const li=Math.floor(slopes.length*.72);
+  DIAMS.forEach((d,ci)=>{
+    const pts=slopes.map(s=>{const r=mp(d,s,curN);return{x:sx(s),y:sy(r.q)};});
+    svg.appendChild(ns('path',{d:pts.map((p,j)=>(j?'L':'M')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' '),fill:'none',stroke:COL[ci],strokeWidth:2.5,strokeLinecap:'round'}));
+    const lp=pts[li];
+    svg.appendChild(ns('rect',{x:lp.x-42,y:lp.y-11,width:84,height:22,rx:4,fill:COL[ci],opacity:.9}));
+    svg.appendChild(ns('text',{x:lp.x,y:lp.y+4,textAnchor:'middle',fill:'white',fontSize:9.5,fontWeight:'bold'},d+'" ('+Math.round(d*25.4)+' mm)'));
+  });
+
+  // Border
+  svg.appendChild(ns('rect',{x:PL,y:PT,width:PW,height:PH,fill:'none',stroke:GR,strokeWidth:.8}));
+
+  // Hint
+  const hg=ns('g');hg.id='hint';
+  hg.appendChild(ns('rect',{x:PL+8,y:PT+8,width:210,height:36,rx:4,fill:BG,stroke:GR,strokeWidth:.5,opacity:.9}));
+  hg.appendChild(ns('text',{x:PL+16,y:PT+24,fill:LT,fontSize:9.5},'Pasa el cursor sobre la gr\u00e1fica'));
+  hg.appendChild(ns('text',{x:PL+16,y:PT+38,fill:LT,fontSize:9.5},'para ver datos en tiempo real'));
+  svg.appendChild(hg);
+}
+
+// Hover layer
+let hoverG=null;
+
+function onMove(e){
+  const svg=document.getElementById('chart');
+  const rect=svg.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*(W/rect.width);
+  const my=(e.clientY-rect.top)*(H/rect.height);
+  const hint=document.getElementById('hint');
+  if(hint)hint.style.display='none';
+
+  if(hoverG){hoverG.remove();hoverG=null;}
+  if(mx<PL||mx>W-PR||my<PT||my>H-PB)return;
+
+  const sVal=ix(mx);
+  let best=null,bd=1e9;
+  DIAMS.forEach(d=>{const r=mp(d,sVal,curN);const dist=Math.abs(Math.log(r.q)-Math.log(iy(my)));if(dist<bd){bd=dist;best={d,s:sVal,q:r.q,v:r.v};}});
+  if(!best)return;
+
+  const snapY=sy(best.q),snapX=sx(best.s);
+  const st=vs(best.v);
+  const ttx=mx>W/2?mx-185:mx+16;
+  const tty=Math.max(PT+5,Math.min(snapY-50,H-PB-95));
+
+  hoverG=ns('g');
+  hoverG.appendChild(ns('line',{x1:mx,x2:mx,y1:PT,y2:H-PB,stroke:BR,strokeWidth:.7,strokeDasharray:'4,3',opacity:.35}));
+  hoverG.appendChild(ns('line',{x1:PL,x2:W-PR,y1:snapY,y2:snapY,stroke:BR,strokeWidth:.7,strokeDasharray:'4,3',opacity:.35}));
+  hoverG.appendChild(ns('circle',{cx:snapX,cy:snapY,r:6,fill:GD,stroke:BR,strokeWidth:1.5}));
+  hoverG.appendChild(ns('rect',{x:ttx,y:tty,width:172,height:88,rx:5,fill:BG,stroke:GD,strokeWidth:1.2,filter:'url(#sh)'}));
+  hoverG.appendChild(ns('text',{x:ttx+12,y:tty+17,fill:BR,fontSize:11,fontWeight:'bold'},'\u00d8'+best.d+'" ('+Math.round(best.d*25.4)+' mm)'));
+  hoverG.appendChild(ns('text',{x:ttx+12,y:tty+33,fill:MD,fontSize:10},'Pendiente: '+best.s.toFixed(2)+'%'));
+  hoverG.appendChild(ns('text',{x:ttx+12,y:tty+49,fill:MD,fontSize:10},'Q = '+fq(best.q)+' m\u00b3/s ('+Math.round(best.q*1000)+' L/s)'));
+  hoverG.appendChild(ns('text',{x:ttx+12,y:tty+65,fill:MD,fontSize:10},'V = '+best.v.toFixed(2)+' m/s'));
+  hoverG.appendChild(ns('text',{x:ttx+12,y:tty+80,fill:st.c,fontSize:10,fontWeight:'bold'},'Estado: '+st.t));
+  svg.appendChild(hoverG);
+}
+
+function onLeave(){
+  if(hoverG){hoverG.remove();hoverG=null;}
+  const hint=document.getElementById('hint');
+  if(hint)hint.style.display='';
+}
+
+function setMat(m,btn){
+  curMat=m;curN=MATS[m];
+  document.querySelectorAll('.btns button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(hoverG){hoverG.remove();hoverG=null;}
+  draw();
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  draw();
+  const svg=document.getElementById('chart');
+  svg.addEventListener('mousemove',onMove);
+  svg.addEventListener('mouseleave',onLeave);
+});
+</script>
+</body>
+</html>
