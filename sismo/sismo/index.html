@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Visor del REP-21 y calculadora de coeficiente sísmico Cs para Panamá. Consultá Ss, S₁, PGA por coordenada. Herramienta generada por LMM Ingeniería.">
+<meta name="author" content="LMM Ingeniería">
+<title>SismoPanamá — Visor REP-21 + Calculadora Cs · LMM Ingeniería</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="style.css"/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">SISMO<span>·</span>PANAMA</div>
+    <div class="version-badge" id="version-badge" title="Ver historial de versiones">v1.0</div>
+  </div>
+  <div class="header-right">
+    <span class="subtitle">REP-21 · Visor Sa + Cálculo Cs</span>
+    <a href="#" onclick="showModal('modal-metodologia'); return false;">Metodología</a>
+    <a href="#" onclick="showModal('modal-acerca'); return false;">Acerca de</a>
+  </div>
+</header>
+
+<aside id="sidebar">
+  <div class="tabs">
+    <button class="tab active" data-tab="consulta">Consulta</button>
+    <button class="tab" data-tab="calculo">Cálculo Cs</button>
+  </div>
+
+  <!-- TAB CONSULTA -->
+  <div class="tab-content active" id="tab-consulta">
+    <div class="section">
+      <div class="section-label">Coordenada del sitio</div>
+      <div class="mode-toggle">
+        <button class="active" onclick="setCoordMode('geo', event)">LAT / LONG</button>
+        <button onclick="setCoordMode('utm', event)">UTM 17N</button>
+      </div>
+      <div id="geo-inputs" class="coord-inputs">
+        <div><label>LATITUD °N</label><input type="number" id="lat-input" step="0.0001" value="8.9824"></div>
+        <div><label>LONGITUD °W</label><input type="number" id="lng-input" step="0.0001" value="-79.5199"></div>
+      </div>
+      <div id="utm-inputs" class="coord-inputs" style="display:none;">
+        <div><label>ESTE (m)</label><input type="number" id="utm-e-input" step="1" value="664000"></div>
+        <div><label>NORTE (m)</label><input type="number" id="utm-n-input" step="1" value="993000"></div>
+      </div>
+      <button class="btn-primary" onclick="queryCoord()">CONSULTAR PUNTO</button>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Capa visible en mapa</div>
+      <div class="layer-toggle">
+        <button class="active" onclick="setLayer('ss', event)">Ss</button>
+        <button onclick="setLayer('s1', event)">S₁</button>
+        <button onclick="setLayer('pga', event)">PGA</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Resultados</div>
+      <div id="results-pane">
+        <div class="empty-state">Cargando mapas oficiales del REP-21...</div>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>AVISO</strong>
+      Herramienta generada por <strong>LMM Ingeniería</strong>. Valores derivados del REP-21 oficial. Para diseño formal, verificar contra el reglamento. El usuario es responsable del uso técnico.
+    </div>
+  </div>
+
+  <!-- TAB CÁLCULO Cs -->
+  <div class="tab-content" id="tab-calculo">
+    <div class="section">
+      <div class="section-label">1. Tipo de estructura</div>
+      <select id="tipo-estructura" class="select-full" onchange="onTipoEstructuraChange()">
+        <option value="edificio">Edificio (Grupo 1, 2500 años)</option>
+        <option value="infra">Infraestructura Grupo 2 (1000 años)</option>
+        <option value="vivienda">Vivienda Unifamiliar</option>
+        <option value="geotecnica">Estructura Geotécnica (factor 2/3)</option>
+      </select>
+      <div id="subtipo-geotecnia-wrapper" style="margin-top:10px; display:none;">
+        <label style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--text-dim); letter-spacing: 0.5px; font-weight: 600;">SUBTIPO GEOTÉCNICO</label>
+        <select id="tipo-geotecnia" class="select-full" style="margin-top:4px;"></select>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">2. Clase de sitio</div>
+      <select id="clase-sitio" class="select-full">
+        <option value="A">A — Roca dura</option>
+        <option value="B" selected>B — Roca</option>
+        <option value="C">C — Suelo muy denso o roca blanda</option>
+        <option value="D">D — Suelo rígido</option>
+        <option value="E">E — Suelo blando</option>
+        <option value="F">F — Requiere estudio específico (bloqueado)</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <div class="section-label">3. Categoría de riesgo</div>
+      <select id="riesgo" class="select-full">
+        <option value="I">I — Bajo riesgo (Ie = 1.00)</option>
+        <option value="II" selected>II — Ordinarias (Ie = 1.00)</option>
+        <option value="III">III — Importantes (Ie = 1.25)</option>
+        <option value="IV">IV — Esenciales (Ie = 1.50)</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <div class="section-label">4. Sistema estructural</div>
+      <select id="categoria-sistema" class="select-full" onchange="updateSistemas()">
+        <option value="concreto">Concreto Reforzado</option>
+        <option value="acero">Acero</option>
+        <option value="mamposteria">Mampostería</option>
+        <option value="otros">Otros</option>
+      </select>
+      <select id="sistema" class="select-full" style="margin-top:6px;" onchange="onSistemaChange()"></select>
+      
+      <!-- Panel custom R, omega, Cd -->
+      <div id="custom-system-panel" class="custom-system-panel" style="display:none;">
+        <div class="grid-3">
+          <div>
+            <label>R</label>
+            <input type="number" id="custom-R" step="0.1" min="0.5" max="10" value="5.0">
+          </div>
+          <div>
+            <label>Ω₀</label>
+            <input type="number" id="custom-omega" step="0.1" min="1" max="5" value="2.5">
+          </div>
+          <div>
+            <label>Cd</label>
+            <input type="number" id="custom-Cd" step="0.1" min="0.5" max="10" value="4.5">
+          </div>
+        </div>
+        <div class="hint" style="margin-top: 0;">Consultar Tabla 12.2-1 de ASCE 7-05 para valores correctos. Usuario asume responsabilidad.</div>
+      </div>
+      
+      <div class="hint">Si su sistema no aparece, seleccione "Otro / Personalizado" en categoría Otros.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">5. Período T (segundos)</div>
+      <input type="number" id="periodo" class="input-full" step="0.01" value="0.5" min="0.05">
+      <div class="hint">Período fundamental de la estructura.</div>
+    </div>
+
+    <button class="btn-primary" onclick="calcularCs()">CALCULAR COEFICIENTE Cs</button>
+
+    <div class="section" id="calc-results" style="display:none;">
+      <div class="section-label">Resultados del cálculo</div>
+      <div id="calc-results-content"></div>
+    </div>
+
+    <div class="section" id="spectrum-section" style="display:none;">
+      <div class="section-label">Espectro de diseño</div>
+      <div class="chart-wrap"><canvas id="spectrum-chart"></canvas></div>
+    </div>
+
+    <button class="btn-primary" id="btn-pdf" style="display:none;" onclick="descargarPDF()">DESCARGAR REPORTE PDF</button>
+  </div>
+</aside>
+
+<div id="map"></div>
+
+<div class="legend" id="legend">
+  <div class="legend-title">Sa (g) — <span id="legend-period">Ss (0.2 s)</span></div>
+  <div class="legend-scale" id="legend-scale"></div>
+</div>
+
+<footer>
+  <span>Herramienta generada por</span>
+  <strong>LMM INGENIERÍA</strong>
+  <span>·</span>
+  <span>SismoPanamá v1.0</span>
+  <span>·</span>
+  <span>Basado en REP-2021</span>
+</footer>
+
+<!-- MODAL Metodología -->
+<div class="modal" id="modal-metodologia" onclick="hideModal('modal-metodologia')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="hideModal('modal-metodologia')">×</button>
+    <h2>Metodología</h2>
+    <p><strong>Fuente de datos:</strong> Mapas oficiales del Anexo 3 del REP-2021. PGA, Ss y S₁ para Clase de Sitio B, período de retorno de 2500 años, 5% amortiguamiento crítico.</p>
+    <p><strong>Marco normativo:</strong> El REP-21 adopta el ASCE/SEI 7-05 con las siguientes modificaciones:</p>
+    <ul>
+      <li>Mapas de aceleración propios para Panamá (Anexo 3).</li>
+      <li>Cortante basal mínimo: Cs ≥ 0.044·SDS·Ie ≥ 0.01 (sección 5.2.1).</li>
+      <li>Período de transición de período largo TL = 10 s (sección 5.13).</li>
+      <li>Para infraestructura Grupo 2: período de retorno 1000 años.</li>
+      <li>Para estructuras geotécnicas: factor 2/3 aplicado a aceleraciones (Capítulo 6).</li>
+      <li>Vivienda unifamiliar: densidad de paredes según PGA (Capítulo 7).</li>
+    </ul>
+    <p><strong>Cálculos automáticos:</strong></p>
+    <ul>
+      <li>Factores Fa y Fv: Tablas 11.4-1 y 11.4-2 ASCE 7-05 (interpolación lineal).</li>
+      <li>SMS = Fa·Ss, SM1 = Fv·S₁, SDS = (2/3)·SMS, SD1 = (2/3)·SM1.</li>
+      <li>Cs = SDS/(R/Ie), limitado por máximos y mínimos según ASCE 7-05.</li>
+      <li>Categoría de Diseño Sísmico: Tablas 11.6-1 y 11.6-2.</li>
+      <li>Espectro de respuesta de diseño (T₀, Ts, TL).</li>
+    </ul>
+    <p><strong>Visualización del mapa:</strong> curvas isosísmicas estilo topográfico con escala de color por intensidad y etiquetas de valor en g.</p>
+    <p><strong>Resolución espacial:</strong> ~1.1 km por píxel (0.01° en ambas direcciones).</p>
+    <div class="lmm-tag">Herramienta generada por LMM Ingeniería</div>
+  </div>
+</div>
+
+<!-- MODAL Acerca -->
+<div class="modal" id="modal-acerca" onclick="hideModal('modal-acerca')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="hideModal('modal-acerca')">×</button>
+    <h2>Acerca de SismoPanamá</h2>
+    <p>SismoPanamá es una herramienta gratuita de consulta y cálculo sísmico basada en el Reglamento Estructural Panameño REP-2021.</p>
+    <p><strong>Desarrollada y generada por:</strong> LMM Ingeniería</p>
+    <p><strong>Licencia:</strong> MIT (código abierto)</p>
+    <p><strong>Marco legal:</strong> Resolución JTIA-020-2022, Gaceta Oficial Digital N° 29594-A (5 agosto 2022).</p>
+    <p><strong>Versión:</strong> <span id="acerca-version">v1.0</span></p>
+    <p><strong>Última actualización:</strong> <span id="acerca-fecha">—</span></p>
+    <p><strong>Aviso de responsabilidad:</strong> Esta herramienta es de referencia. El uso técnico es responsabilidad del ingeniero usuario. SismoPanamá ni LMM Ingeniería se hacen responsables de errores de diseño derivados del uso de esta herramienta. Para diseño formal, verificar siempre contra el reglamento oficial.</p>
+    <div class="lmm-tag">© LMM Ingeniería — Herramienta libre para uso profesional</div>
+  </div>
+</div>
+
+<!-- MODAL Changelog -->
+<div class="modal" id="modal-changelog" onclick="hideModal('modal-changelog')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="hideModal('modal-changelog')">×</button>
+    <h2>Historial de versiones</h2>
+    <div id="changelog-content"></div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="lib/raster.js"></script>
+<script src="lib/seismic-calc.js"></script>
+<script src="lib/pdf-gen.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
