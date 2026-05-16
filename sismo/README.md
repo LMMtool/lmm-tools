@@ -1,52 +1,43 @@
-# SismoPanamá — Visor REP-21 + Calculadora Cs
+# SismoPanamá — Visor REP-21 + Calculadora
 
-Herramienta web gratuita para consulta de aceleraciones espectrales del Reglamento Estructural Panameño (REP-2021) y cálculo del coeficiente sísmico de diseño Cs.
+Herramienta web gratuita basada en el Reglamento Estructural Panameño REP-2021.
 
-**URL del visor:** [lmmtool.github.io/sismo](https://lmmtool.github.io/sismo)
+**URL:** [lmmtool.github.io/sismo](https://lmmtool.github.io/sismo)
+**Generada por:** LMM Ingeniería
 
-**Herramienta generada por:** LMM Ingeniería
+## Funcionalidades v1.0.2
 
----
+### Visor
+- Consulta de PGA, Ss, S₁ por coordenada (clic en mapa o input manual).
+- Inputs duales: Latitud/Longitud ↔ UTM 17N.
+- **Curvas isosísmicas tipo topográfico** con spline (esquinas redondas) cada 0.04 g.
+- **Etiquetas embebidas sobre la línea** al hacer zoom (≥ zoom 9).
+- Escala de color por intensidad (azul claro a rojo).
 
-## Funcionalidades
+### Tres metodologías diferenciadas
 
-### Visor del mapa
-- Consulta interactiva de PGA, Ss y S₁ por coordenada (clic en mapa o ingreso manual).
-- Inputs duales: Latitud/Longitud ↔ UTM Zona 17N (mismo CRS oficial del REP-21).
-- **Curvas isosísmicas topográficas** con escala de color por intensidad y etiquetas de valor.
-- Tres basemaps: CartoDB Voyager, OpenStreetMap, Satélite (Esri).
+**1. Edificios e Infraestructura Grupo 2** (ASCE 7-05 + REP-21)
+- Inputs: Clase Sitio, Categoría Riesgo, Sistema Estructural, Período T.
+- Calcula: Fa, Fv, SMS, SM1, SDS, SD1, Cs, CDS, espectro de diseño.
+- 20 sistemas estructurales + opción personalizada (R/Ω₀/Cd manual).
 
-### Calculadora de coeficiente sísmico Cs
-- **Tipo de estructura**: edificio, infraestructura Grupo 2, vivienda unifamiliar, geotécnica.
-- **Submenú geotécnico**: muro de retención, gaviones, geocelda, tablestaca, talud, pilote, etc.
-- **Clase de sitio** A-F (Clase F bloqueada por requerir estudio específico).
-- **Categoría de riesgo** I-IV con factor de importancia Ie.
-- **20 sistemas estructurales** organizados por material + opción personalizada (R/Ω₀/Cd manual).
-- Cálculo automático: Fa, Fv, SMS, SM1, SDS, SD1, Cs, Categoría de Diseño Sísmico.
-- Espectro de respuesta de diseño graficado dinámicamente.
+**2. Vivienda Unifamiliar** (REP-21 Capítulo 7 - simplificado)
+- Inputs reducidos: Solo Clase de Sitio + checkboxes de condiciones.
+- Calcula: PGA, densidad mínima de paredes, clasificación construcción típica.
+- No usa ASCE completo (no aplica a este caso normativo).
 
-### Reporte técnico PDF
-- Memoria técnica completa con todos los valores, ecuaciones y referencias normativas.
-- Formato carta (8.5 × 11 pulgadas).
-- Hash único por reporte para trazabilidad.
-- Footer: "Aplicación desarrollada por LMM Ingeniería".
+**3. Estructura Geotécnica** (REP-21 Capítulo 6 - pseudoestático)
+- Inputs reducidos: Subtipo geotécnico, Clase Sitio, kv.
+- Calcula: PGA×2/3, kh, kv, ángulo ψ Mononobe-Okabe.
+- 8 subtipos: muros, gaviones, geocelda, tablestaca, talud, pilote, etc.
 
----
+### Reporte PDF
+- Memoria técnica completa por tipo de estructura.
+- Formato Carta 8.5 × 11".
+- Footer permanente "Aplicación desarrollada por LMM Ingeniería".
+- Hash único de trazabilidad.
 
-## Marco normativo
-
-- **REP-2021** — Resolución JTIA-020-2022, Gaceta Oficial Digital N° 29594-A (5 agosto 2022).
-- **ASCE/SEI 7-05** — Capítulos 11, 12 y 20.
-
-### Modificaciones REP-21 implementadas:
-- Cortante basal mínimo: `Cs ≥ 0.044·SDS·Ie ≥ 0.01` (sección 5.2.1).
-- Período de transición de período largo: `TL = 10 s` (sección 5.13).
-- Factor 2/3 para estructuras geotécnicas (Capítulo 6).
-- Densidad mínima de paredes en vivienda unifamiliar según PGA (Capítulo 7).
-
----
-
-## Estructura del repositorio
+## Estructura
 
 ```
 sismo/
@@ -56,9 +47,7 @@ sismo/
 ├── data/
 │   ├── manifest.json
 │   └── v1.0/
-│       ├── pga.json
-│       ├── ss.json
-│       ├── s1.json
+│       ├── pga.json, ss.json, s1.json
 │       └── contours.json
 ├── lib/
 │   ├── raster.js
@@ -67,19 +56,10 @@ sismo/
 └── README.md
 ```
 
----
-
 ## Aviso legal
 
-Esta herramienta es de **referencia**. El uso técnico es **responsabilidad exclusiva del ingeniero usuario**. SismoPanamá y LMM Ingeniería no se hacen responsables de errores de diseño derivados del uso de esta herramienta. La responsabilidad del diseño sísmico recae enteramente sobre el profesional firmante.
-
----
+Esta herramienta es de **referencia**. El uso técnico es **responsabilidad exclusiva del ingeniero usuario**. La responsabilidad del diseño sísmico recae enteramente sobre el profesional firmante.
 
 ## Licencia
 
-MIT License.
-
-## Contacto
-
-**LMM Ingeniería**  
-GitHub: [@LMMtool](https://github.com/LMMtool)
+MIT. © 2026 LMM Ingeniería.

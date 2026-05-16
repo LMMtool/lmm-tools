@@ -1,6 +1,5 @@
 // ============================================================
-// SISMOPANAMA - Aplicación principal v1.0.1
-// © LMM Ingeniería 2026
+// SISMOPANAMA v1.0.2 - © LMM Ingeniería 2026
 // ============================================================
 
 proj4.defs("EPSG:32617", "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs");
@@ -14,7 +13,6 @@ const utmToLatLng = (e, n) => {
   return { lat, lng };
 };
 
-// Estado
 let manager = null;
 let manifest = null;
 let map = null;
@@ -27,39 +25,33 @@ let lastResult = null;
 let lastCoord = null;
 let spectrumChart = null;
 
-// ============================================================
-// COLOR SCALES por capa
-// ============================================================
-// Paleta corporativa con gradiente para curvas
+// Escala de color por valor de aceleración - paleta corporativa
 function colorForContour(layer, value) {
-  // Escala azul claro -> azul medio -> azul oscuro -> naranja -> rojo
-  // Para Ss (0.5 - 2.0)
   const ranges = {
-    'ss':  { min: 0.5, max: 2.0 },
-    's1':  { min: 0.2, max: 0.75 },
-    'pga': { min: 0.25, max: 0.85 }
+    'ss':  { min: 0.6, max: 2.0 },
+    's1':  { min: 0.24, max: 0.76 },
+    'pga': { min: 0.24, max: 0.88 }
   };
   const r = ranges[layer];
   const norm = Math.max(0, Math.min(1, (value - r.min) / (r.max - r.min)));
-  // 5 stops de la paleta
-  if (norm < 0.25) return '#4A90C4';   // azul claro
-  if (norm < 0.50) return '#2D6A9F';   // azul medio
-  if (norm < 0.70) return '#1E3A5F';   // azul oscuro
-  if (norm < 0.85) return '#D97706';   // naranja
-  return '#DC2626';                     // rojo
+  // Azul claro -> medio -> oscuro -> naranja -> rojo
+  if (norm < 0.20) return '#4A90C4';
+  if (norm < 0.40) return '#2D6A9F';
+  if (norm < 0.60) return '#1E3A5F';
+  if (norm < 0.80) return '#D97706';
+  return '#DC2626';
+}
+
+function isMajorContour(value, layer) {
+  // Curvas mayores cada 0.10 g (Ss) o 0.04 g x 2 = 0.08 (S1/PGA) - usar 0.10
+  if (layer === 'ss') return Math.abs(value % 0.20) < 0.005;
+  return Math.abs(value % 0.10) < 0.005;
 }
 
 function widthForContour(value, layer) {
-  // Curvas mayores (cada 0.5 g en Ss, 0.2 en S1/PGA) más gruesas
-  if (layer === 'ss') {
-    return (Math.abs(value % 0.5) < 0.001) ? 2.0 : 1.0;
-  }
-  return (Math.abs(value % 0.2) < 0.001) ? 2.0 : 1.0;
+  return isMajorContour(value, layer) ? 2.2 : 1.0;
 }
 
-// ============================================================
-// INIT
-// ============================================================
 async function init() {
   try {
     manifest = await fetch('data/manifest.json').then(r => r.json());
@@ -88,7 +80,7 @@ async function init() {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  // Setup geotecnia submenu
+  // Poblar selector geotecnia
   const geoSelect = document.getElementById('tipo-geotecnia');
   Object.entries(SismicCalc.TIPOS_GEOTECNICA).forEach(([key, label]) => {
     const opt = document.createElement('option');
@@ -104,9 +96,6 @@ async function init() {
   );
 }
 
-// ============================================================
-// MAPA
-// ============================================================
 function initMap() {
   map = L.map('map', {
     center: [8.7, -80.5],
@@ -141,12 +130,9 @@ function initMap() {
     queryCoord();
   });
 
-  map.on('zoomend', updateLabels);
+  map.on('zoomend moveend', updateLabels);
 }
 
-// ============================================================
-// CURVAS ISOSÍSMICAS
-// ============================================================
 function renderContours() {
   if (!manager || !manager.loaded) return;
   contourLayer.clearLayers();
@@ -160,13 +146,14 @@ function renderContours() {
     const width = widthForContour(level.value, currentLayer);
     
     level.paths.forEach(path => {
-      // Convertir [lng, lat] -> [lat, lng] para Leaflet
       const latlngs = path.map(p => [p[1], p[0]]);
       L.polyline(latlngs, {
         color: color,
         weight: width,
-        opacity: 0.85,
-        smoothFactor: 1.2
+        opacity: 0.9,
+        smoothFactor: 1.5,
+        lineCap: 'round',
+        lineJoin: 'round'
       }).addTo(contourLayer);
     });
   });
@@ -175,55 +162,84 @@ function renderContours() {
   updateLabels();
 }
 
+// Etiquetas embebidas SOBRE la línea (estilo topográfico) — solo cuando zoom es alto
 function updateLabels() {
   if (!manager || !manager.loaded) return;
   labelLayer.clearLayers();
   
   const zoom = map.getZoom();
-  if (zoom < 7) return; // No mostrar etiquetas en zoom muy chico
+  // No mostrar etiquetas hasta zoom 9
+  if (zoom < 9) return;
   
   const contours = manager.getContours(currentLayer);
   if (!contours) return;
 
-  // Solo etiquetar curvas "mayores" (cada 0.5 g en Ss, 0.2 g en S1/PGA)
-  // y mostrar más etiquetas al hacer zoom in
+  const bounds = map.getBounds();
+  
   contours.forEach(level => {
-    let mostrar = false;
-    if (currentLayer === 'ss') {
-      mostrar = (Math.abs(level.value % 0.5) < 0.001) || (zoom >= 9 && Math.abs(level.value % 0.2) < 0.05);
+    // Decidir si etiquetar este nivel según zoom
+    let etiquetar;
+    if (zoom >= 11) {
+      // Zoom alto: todas las curvas
+      etiquetar = true;
+    } else if (zoom >= 10) {
+      // Solo mayores y medias
+      etiquetar = isMajorContour(level.value, currentLayer) || 
+                  (currentLayer === 'ss' ? Math.abs(level.value % 0.08) < 0.005 : Math.abs(level.value % 0.08) < 0.005);
     } else {
-      mostrar = (Math.abs(level.value % 0.2) < 0.001) || (zoom >= 9);
+      // Solo curvas mayores
+      etiquetar = isMajorContour(level.value, currentLayer);
     }
-    if (!mostrar) return;
+    if (!etiquetar) return;
 
-    level.paths.forEach((path, pathIdx) => {
-      if (path.length < 4) return;
-      // Una etiqueta cada N puntos según zoom
-      const interval = zoom < 8 ? Math.floor(path.length / 1) : (zoom < 10 ? Math.floor(path.length / 2) : Math.floor(path.length / 3));
-      const idx = Math.floor(path.length / 2);
-      const p = path[idx];
-      if (!p) return;
+    level.paths.forEach(path => {
+      if (path.length < 6) return;
       
-      const labelIcon = L.divIcon({
-        className: 'contour-label-wrapper',
-        html: `<div class="contour-label">${level.value.toFixed(2)}</div>`,
-        iconSize: [40, 14],
-        iconAnchor: [20, 7]
-      });
-      L.marker([p[1], p[0]], { 
-        icon: labelIcon,
-        interactive: false,
-        keyboard: false
-      }).addTo(labelLayer);
+      // Calcular puntos donde colocar etiquetas a lo largo de la línea
+      // Posición: ~mitad del path, y opcionalmente más etiquetas en paths largos
+      const numLabels = Math.min(Math.floor(path.length / 40) + 1, 3);
+      
+      for (let labelIdx = 0; labelIdx < numLabels; labelIdx++) {
+        // Posición uniforme a lo largo del path
+        const idx = Math.floor(path.length * (labelIdx + 1) / (numLabels + 1));
+        const p1 = path[idx];
+        const p2 = path[Math.min(idx + 2, path.length - 1)];
+        if (!p1 || !p2) continue;
+        
+        // Solo etiquetar si está dentro del viewport
+        if (!bounds.contains([p1[1], p1[0]])) continue;
+        
+        // Calcular ángulo del segmento para rotar la etiqueta
+        const dx = p2[0] - p1[0];
+        const dy = p2[1] - p1[1];
+        let angle = Math.atan2(-dy, dx) * 180 / Math.PI;
+        // Mantener legible: nunca de cabeza
+        if (angle > 90) angle -= 180;
+        if (angle < -90) angle += 180;
+        
+        const labelText = level.value.toFixed(2);
+        const labelIcon = L.divIcon({
+          className: 'contour-label-wrapper',
+          html: `<div class="contour-label-inline" style="transform: rotate(${angle}deg);">${labelText}</div>`,
+          iconSize: [30, 14],
+          iconAnchor: [15, 7]
+        });
+        L.marker([p1[1], p1[0]], { 
+          icon: labelIcon,
+          interactive: false,
+          keyboard: false,
+          zIndexOffset: 200
+        }).addTo(labelLayer);
+      }
     });
   });
 }
 
 function updateLegend() {
   const labels = {
-    'ss':  { name: 'Ss (0.2 s)',  levels: [0.6, 0.8, 1.0, 1.4, 1.8] },
-    's1':  { name: 'S₁ (1.0 s)',  levels: [0.25, 0.35, 0.45, 0.55, 0.70] },
-    'pga': { name: 'PGA (0 s)',   levels: [0.30, 0.40, 0.50, 0.65, 0.80] }
+    'ss':  { name: 'Ss (0.2 s)',  levels: [0.7, 1.0, 1.3, 1.6, 1.9] },
+    's1':  { name: 'S₁ (1.0 s)',  levels: [0.28, 0.40, 0.52, 0.64, 0.75] },
+    'pga': { name: 'PGA (0 s)',   levels: [0.28, 0.40, 0.52, 0.68, 0.84] }
   };
   document.getElementById('legend-period').textContent = labels[currentLayer].name;
   
@@ -247,9 +263,6 @@ function setLayer(layer, event) {
   renderContours();
 }
 
-// ============================================================
-// COORDENADAS
-// ============================================================
 function setCoordMode(mode, event) {
   coordMode = mode;
   document.querySelectorAll('.mode-toggle button').forEach(b => b.classList.remove('active'));
@@ -322,10 +335,10 @@ function queryCoord() {
   if (marker) map.removeLayer(marker);
   marker = L.circleMarker([coord.lat, coord.lng], {
     radius: 8,
-    color: '#2D6A9F',
+    color: '#1E3A5F',
     weight: 3,
     fillColor: '#4A90C4',
-    fillOpacity: 0.7
+    fillOpacity: 0.8
   }).addTo(map);
   marker.bindPopup(
     `<strong>PGA</strong> ${vals.pga.toFixed(3)} g<br>` +
@@ -357,9 +370,6 @@ function queryCoord() {
   `;
 }
 
-// ============================================================
-// TABS
-// ============================================================
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -367,13 +377,19 @@ function switchTab(name) {
   document.getElementById('tab-' + name).classList.add('active');
 }
 
-// ============================================================
-// FORM HANDLERS
-// ============================================================
 function onTipoEstructuraChange() {
   const tipo = document.getElementById('tipo-estructura').value;
-  document.getElementById('subtipo-geotecnia-wrapper').style.display = 
+  document.getElementById('campos-edificio').style.display = 
+    (tipo === 'edificio' || tipo === 'infra') ? 'block' : 'none';
+  document.getElementById('campos-vivienda').style.display = 
+    (tipo === 'vivienda') ? 'block' : 'none';
+  document.getElementById('campos-geotecnia').style.display = 
     (tipo === 'geotecnica') ? 'block' : 'none';
+  
+  // Ocultar resultados anteriores al cambiar
+  document.getElementById('calc-results').style.display = 'none';
+  document.getElementById('spectrum-section').style.display = 'none';
+  document.getElementById('btn-pdf').style.display = 'none';
 }
 
 function updateSistemas() {
@@ -400,10 +416,7 @@ function onSistemaChange() {
   panel.style.display = (sistemaKey === 'custom') ? 'block' : 'none';
 }
 
-// ============================================================
-// CÁLCULO Cs
-// ============================================================
-function calcularCs() {
+function calcular() {
   if (!manager || !manager.loaded) {
     alert('Los datos aún no han cargado. Esperá un momento.');
     return;
@@ -420,36 +433,43 @@ function calcularCs() {
   }
 
   const tipoEstructura = document.getElementById('tipo-estructura').value;
-  const tipoGeotecnia = (tipoEstructura === 'geotecnica') 
-    ? document.getElementById('tipo-geotecnia').value : null;
-  const claseSitio = document.getElementById('clase-sitio').value;
-  const riesgo = document.getElementById('riesgo').value;
-  const sistemaKey = document.getElementById('sistema').value;
-  const periodo = parseFloat(document.getElementById('periodo').value);
 
-  if (isNaN(periodo) || periodo <= 0) {
-    alert('Período debe ser un número positivo.');
-    return;
-  }
-
-  const input = {
+  let input = {
     ss: vals.ss, s1: vals.s1, pga: vals.pga,
-    claseSitio, riesgo, sistemaKey, periodo, 
-    tipoEstructura, tipoGeotecnia
+    tipoEstructura
   };
 
-  if (sistemaKey === 'custom') {
-    input.customR = parseFloat(document.getElementById('custom-R').value);
-    input.customOmega = parseFloat(document.getElementById('custom-omega').value);
-    input.customCd = parseFloat(document.getElementById('custom-Cd').value);
-    if (isNaN(input.customR) || isNaN(input.customOmega) || isNaN(input.customCd)) {
-      alert('Ingresá valores numéricos válidos para R, Ω₀ y Cd.');
+  if (tipoEstructura === 'edificio' || tipoEstructura === 'infra') {
+    input.claseSitio = document.getElementById('clase-sitio').value;
+    input.riesgo = document.getElementById('riesgo').value;
+    input.sistemaKey = document.getElementById('sistema').value;
+    input.periodo = parseFloat(document.getElementById('periodo').value);
+    
+    if (isNaN(input.periodo) || input.periodo <= 0) {
+      alert('Período debe ser un número positivo.');
       return;
     }
+    
+    if (input.sistemaKey === 'custom') {
+      input.customR = parseFloat(document.getElementById('custom-R').value);
+      input.customOmega = parseFloat(document.getElementById('custom-omega').value);
+      input.customCd = parseFloat(document.getElementById('custom-Cd').value);
+      if (isNaN(input.customR) || isNaN(input.customOmega) || isNaN(input.customCd)) {
+        alert('Ingresá valores válidos para R, Ω₀ y Cd.');
+        return;
+      }
+    }
+  } else if (tipoEstructura === 'vivienda') {
+    input.claseSitio = document.getElementById('clase-sitio-viv').value;
+    input.suelosProblema = document.getElementById('suelos-problema').checked;
+    input.irregularidad = document.getElementById('irregularidad').checked;
+  } else if (tipoEstructura === 'geotecnica') {
+    input.claseSitio = document.getElementById('clase-sitio-geo').value;
+    input.tipoGeotecnia = document.getElementById('tipo-geotecnia').value;
+    input.kvOption = document.getElementById('kv-option').value;
   }
 
   const result = SismicCalc.calcularSismico(input);
-
   lastResult = result;
   lastCoord = { ...coord, utm: latLngToUTM(coord.lat, coord.lng) };
 
@@ -462,8 +482,7 @@ function renderCalcResults(result) {
   section.style.display = 'block';
 
   if (!result.valido) {
-    container.innerHTML = result.errores.map(e => 
-      `<div class="error-box"><strong>${e.split('.')[0]}.</strong><br>${e.split('.').slice(1).join('.').trim()}</div>`).join('');
+    container.innerHTML = result.errores.map(e => `<div class="error-box">${e}</div>`).join('');
     document.getElementById('btn-pdf').style.display = 'none';
     document.getElementById('spectrum-section').style.display = 'none';
     return;
@@ -471,55 +490,106 @@ function renderCalcResults(result) {
 
   let html = '';
   
-  html += `
-    <div class="cs-result-card">
-      <div class="label">COEFICIENTE SÍSMICO Cs</div>
-      <div class="value">${result.Cs.toFixed(4)}</div>
-      <div class="sub">Gobierna: límite ${result.Cs_gobierna}</div>
-    </div>
-  `;
-
-  html += `
-    <div class="info-row">
-      <span class="k">CATEGORÍA DISEÑO SÍSMICO</span>
-      <span class="v"><span class="cds-badge">${result.CDS}</span></span>
-    </div>
-    <div class="info-row"><span class="k">Fa</span><span class="v">${result.Fa.toFixed(3)}</span></div>
-    <div class="info-row"><span class="k">Fv</span><span class="v">${result.Fv.toFixed(3)}</span></div>
-    <div class="info-row"><span class="k">SMS</span><span class="v">${result.SMS.toFixed(3)} g</span></div>
-    <div class="info-row"><span class="k">SM₁</span><span class="v">${result.SM1.toFixed(3)} g</span></div>
-    <div class="info-row"><span class="k">SDS</span><span class="v">${result.SDS.toFixed(3)} g</span></div>
-    <div class="info-row"><span class="k">SD₁</span><span class="v">${result.SD1.toFixed(3)} g</span></div>
-    <div class="info-row"><span class="k">R</span><span class="v">${result.R.toFixed(2)}</span></div>
-    <div class="info-row"><span class="k">Ω₀</span><span class="v">${result.omega.toFixed(2)}</span></div>
-    <div class="info-row"><span class="k">Cd</span><span class="v">${result.Cd.toFixed(2)}</span></div>
-    <div class="info-row"><span class="k">Ie</span><span class="v">${result.Ie.toFixed(2)}</span></div>
-    <div class="info-row"><span class="k">T₀</span><span class="v">${result.T0.toFixed(3)} s</span></div>
-    <div class="info-row"><span class="k">Ts</span><span class="v">${result.Ts.toFixed(3)} s</span></div>
-    <div class="info-row"><span class="k">TL</span><span class="v">${result.TL.toFixed(1)} s</span></div>
-  `;
-
-  if (result.viviendaDensidadMin) {
-    html += `
-      <div class="warning-box">
-        <strong>VIVIENDA UNIFAMILIAR:</strong> Densidad mínima de paredes = ${result.viviendaDensidadMin.toFixed(1)}% (REP-21 Cap. 7).
-      </div>
-    `;
+  if (result.input.tipoEstructura === 'edificio' || result.input.tipoEstructura === 'infra') {
+    html = renderResultadosEdificio(result);
+    renderSpectrum(result);
+    document.getElementById('spectrum-section').style.display = 'block';
+  } else if (result.input.tipoEstructura === 'vivienda') {
+    html = renderResultadosVivienda(result);
+    document.getElementById('spectrum-section').style.display = 'none';
+  } else if (result.input.tipoEstructura === 'geotecnica') {
+    html = renderResultadosGeotecnia(result);
+    document.getElementById('spectrum-section').style.display = 'none';
   }
 
-  if (result.advertencias.length > 0) {
-    html += result.advertencias.map(a =>
-      `<div class="warning-box">${a}</div>`).join('');
+  if (result.advertencias && result.advertencias.length > 0) {
+    html += result.advertencias.map(a => `<div class="warning-box">${a}</div>`).join('');
   }
 
   container.innerHTML = html;
-
-  renderSpectrum(result);
-  document.getElementById('spectrum-section').style.display = 'block';
   document.getElementById('btn-pdf').style.display = 'block';
 }
 
+function renderResultadosEdificio(r) {
+  return `
+    <div class="cs-result-card">
+      <div class="label">COEFICIENTE SÍSMICO Cs</div>
+      <div class="value">${r.Cs.toFixed(4)}</div>
+      <div class="sub">Gobierna: límite ${r.Cs_gobierna}</div>
+    </div>
+    <div class="info-row"><span class="k">CATEGORÍA DISEÑO SÍSMICO</span><span class="v"><span class="cds-badge">${r.CDS}</span></span></div>
+    <div class="info-row"><span class="k">Fa</span><span class="v">${r.Fa.toFixed(3)}</span></div>
+    <div class="info-row"><span class="k">Fv</span><span class="v">${r.Fv.toFixed(3)}</span></div>
+    <div class="info-row"><span class="k">SMS</span><span class="v">${r.SMS.toFixed(3)} g</span></div>
+    <div class="info-row"><span class="k">SM₁</span><span class="v">${r.SM1.toFixed(3)} g</span></div>
+    <div class="info-row"><span class="k">SDS</span><span class="v">${r.SDS.toFixed(3)} g</span></div>
+    <div class="info-row"><span class="k">SD₁</span><span class="v">${r.SD1.toFixed(3)} g</span></div>
+    <div class="info-row"><span class="k">R</span><span class="v">${r.R.toFixed(2)}</span></div>
+    <div class="info-row"><span class="k">Ω₀</span><span class="v">${r.omega.toFixed(2)}</span></div>
+    <div class="info-row"><span class="k">Cd</span><span class="v">${r.Cd.toFixed(2)}</span></div>
+    <div class="info-row"><span class="k">Ie</span><span class="v">${r.Ie.toFixed(2)}</span></div>
+    <div class="info-row"><span class="k">T₀</span><span class="v">${r.T0.toFixed(3)} s</span></div>
+    <div class="info-row"><span class="k">Ts</span><span class="v">${r.Ts.toFixed(3)} s</span></div>
+    <div class="info-row"><span class="k">TL</span><span class="v">${r.TL.toFixed(1)} s</span></div>
+  `;
+}
+
+function renderResultadosVivienda(r) {
+  const calificaHtml = r.calificaTipica
+    ? `<div style="background: rgba(16,185,129,0.1); border-left: 3px solid #10B981; padding: 10px; margin: 10px 0; border-radius: 4px; color: #065F46; font-size: 12px;">
+         <strong>✓ CALIFICA COMO CONSTRUCCIÓN TÍPICA</strong><br>
+         REP-21 sec. 7.3-7.4
+       </div>`
+    : `<div class="warning-box">
+         <strong>NO CALIFICA COMO CONSTRUCCIÓN TÍPICA</strong><br>
+         Triggers detectados:<br>
+         ${r.triggersNoTipica.map(t => '• ' + t).join('<br>')}
+       </div>`;
+
+  return `
+    <div class="cs-result-card">
+      <div class="label">DENSIDAD MÍNIMA DE PAREDES</div>
+      <div class="value">${r.densidadMinima.toFixed(1)} %</div>
+      <div class="sub">${r.zonaPGA}</div>
+    </div>
+    <div class="info-row"><span class="k">PGA del sitio</span><span class="v">${r.PGA.toFixed(3)} g</span></div>
+    <div class="info-row"><span class="k">Clase de sitio</span><span class="v">${r.input.claseSitio}</span></div>
+    ${calificaHtml}
+    <div style="margin-top: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 0.5px;">PARÁMETROS DE MAMPOSTERÍA CONFINADA (REF.)</div>
+    <div class="info-row"><span class="k">R</span><span class="v">${r.R.toFixed(2)}</span></div>
+    <div class="info-row"><span class="k">Ω₀</span><span class="v">${r.omega.toFixed(2)}</span></div>
+    <div class="info-row"><span class="k">Cd</span><span class="v">${r.Cd.toFixed(2)}</span></div>
+  `;
+}
+
+function renderResultadosGeotecnia(r) {
+  return `
+    <div class="cs-result-card">
+      <div class="label">COEFICIENTES PSEUDOESTÁTICOS</div>
+      <div class="value">kh = ${r.kh.toFixed(4)}</div>
+      <div class="sub">kv = ${r.kv.toFixed(4)}</div>
+    </div>
+    <div class="info-row"><span class="k">Subtipo</span><span class="v" style="font-size: 10px;">${r.tipoGeotecnico}</span></div>
+    <div class="info-row"><span class="k">Clase de sitio</span><span class="v">${r.input.claseSitio}</span></div>
+    <div class="info-row"><span class="k">Fa</span><span class="v">${r.Fa.toFixed(3)}</span></div>
+    <div style="margin-top: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 0.5px;">ACELERACIONES</div>
+    <div class="info-row"><span class="k">PGA del mapa</span><span class="v">${r.PGA_mapa.toFixed(3)} g</span></div>
+    <div class="info-row"><span class="k">PGA ajustado sitio</span><span class="v">${r.PGA_sitio.toFixed(3)} g</span></div>
+    <div class="info-row"><span class="k">PGA diseño (×2/3)</span><span class="v">${r.PGA_diseno.toFixed(3)} g</span></div>
+    <div class="info-row"><span class="k">PGA diseño + sitio</span><span class="v">${r.PGA_diseno_sitio.toFixed(3)} g</span></div>
+    <div style="margin-top: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 0.5px;">ÁNGULO DE INERCIA SÍSMICO (MONONOBE-OKABE)</div>
+    <div class="info-row"><span class="k">ψ (rad)</span><span class="v">${r.psi_rad.toFixed(4)}</span></div>
+    <div class="info-row"><span class="k">ψ (grados)</span><span class="v">${r.psi_deg.toFixed(2)}°</span></div>
+  `;
+}
+
 function renderSpectrum(result) {
+  // Fix bug Chart.js distorsión PC: forzar resize antes
+  const canvas = document.getElementById('spectrum-chart');
+  const wrap = canvas.parentElement;
+  canvas.style.width = '100%';
+  canvas.style.height = '200px';
+  
   const puntos = SismicCalc.generarEspectro(
     result.SDS, result.SD1, result.T0, result.Ts, result.TL, 4.0
   );
@@ -527,7 +597,7 @@ function renderSpectrum(result) {
   const data = puntos.map(p => p.Sa);
 
   if (spectrumChart) spectrumChart.destroy();
-  const ctx = document.getElementById('spectrum-chart').getContext('2d');
+  const ctx = canvas.getContext('2d');
   spectrumChart = new Chart(ctx, {
     type: 'line',
     data: {
@@ -535,7 +605,7 @@ function renderSpectrum(result) {
       datasets: [{
         label: 'Sa (g)',
         data: data,
-        borderColor: '#2D6A9F',
+        borderColor: '#1E3A5F',
         backgroundColor: 'rgba(45,106,159,0.15)',
         fill: true,
         borderWidth: 2.5,
@@ -546,7 +616,8 @@ function renderSpectrum(result) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 400 },
+      resizeDelay: 100,
+      animation: { duration: 300 },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -577,9 +648,6 @@ function renderSpectrum(result) {
   });
 }
 
-// ============================================================
-// PDF
-// ============================================================
 async function descargarPDF() {
   if (!lastResult || !lastCoord) {
     alert('Primero ejecutá un cálculo.');
@@ -602,16 +670,13 @@ async function descargarPDF() {
   }
 }
 
-// ============================================================
-// MODALES
-// ============================================================
 function showModal(id) { document.getElementById(id).classList.add('active'); }
 function hideModal(id) { document.getElementById(id).classList.remove('active'); }
 
 function renderChangelog() {
   if (!manifest || !manifest.changelog) return;
   const html = manifest.changelog.map(entry => `
-    <div style="margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+    <div style="margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-light);">
       <h3 style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--accent); margin-bottom: 4px;">
         ${entry.version} — ${entry.date}
       </h3>
@@ -621,16 +686,14 @@ function renderChangelog() {
   document.getElementById('changelog-content').innerHTML = html;
 }
 
-// ============================================================
-// ARRANQUE
-// ============================================================
 document.addEventListener('DOMContentLoaded', init);
 
+// Exports
 window.setCoordMode = setCoordMode;
 window.setLayer = setLayer;
 window.queryCoord = queryCoord;
 window.updateSistemas = updateSistemas;
-window.calcularCs = calcularCs;
+window.calcular = calcular;
 window.descargarPDF = descargarPDF;
 window.showModal = showModal;
 window.hideModal = hideModal;
