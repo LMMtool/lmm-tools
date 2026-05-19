@@ -1,41 +1,34 @@
-# SismoPanamá — Visor REP-21 + Calculadora
+# SismoPanamá v1.0.3
 
-Herramienta web gratuita basada en el Reglamento Estructural Panameño REP-2021.
+Visor del REP-2021 + calculadora sísmica para Panamá.
 
 **URL:** [lmmtool.github.io/sismo](https://lmmtool.github.io/sismo)
 **Generada por:** LMM Ingeniería
 
-## Funcionalidades v1.0.2
+## Novedades v1.0.3
+
+✅ **Curvas vectoriales oficiales del REP** integradas desde el ArcGIS oficial (JTIA + ACP + Esri Panamá + Colegio de Ingenieros Civiles).
+✅ Zona Panamá-Colón muestra los datos oficiales cada **0.02 g**.
+✅ Resto del país usa curvas suavizadas del raster nacional.
+✅ Sin saturación multicolor — color único corporativo con jerarquía visual (curvas mayores cada 0.10 g + menores cada 0.02 g).
+
+## Funcionalidades
 
 ### Visor
-- Consulta de PGA, Ss, S₁ por coordenada (clic en mapa o input manual).
-- Inputs duales: Latitud/Longitud ↔ UTM 17N.
-- **Curvas isosísmicas tipo topográfico** con spline (esquinas redondas) cada 0.04 g.
-- **Etiquetas embebidas sobre la línea** al hacer zoom (≥ zoom 9).
-- Escala de color por intensidad (azul claro a rojo).
+- Consulta PGA, Ss, S₁ por coordenada.
+- Latitud/Longitud ↔ UTM 17N.
+- Curvas isosísmicas profesionales (datos oficiales + nacional).
+- Etiquetas embebidas sobre la línea al hacer zoom.
 
-### Tres metodologías diferenciadas
-
-**1. Edificios e Infraestructura Grupo 2** (ASCE 7-05 + REP-21)
-- Inputs: Clase Sitio, Categoría Riesgo, Sistema Estructural, Período T.
-- Calcula: Fa, Fv, SMS, SM1, SDS, SD1, Cs, CDS, espectro de diseño.
-- 20 sistemas estructurales + opción personalizada (R/Ω₀/Cd manual).
-
-**2. Vivienda Unifamiliar** (REP-21 Capítulo 7 - simplificado)
-- Inputs reducidos: Solo Clase de Sitio + checkboxes de condiciones.
-- Calcula: PGA, densidad mínima de paredes, clasificación construcción típica.
-- No usa ASCE completo (no aplica a este caso normativo).
-
-**3. Estructura Geotécnica** (REP-21 Capítulo 6 - pseudoestático)
-- Inputs reducidos: Subtipo geotécnico, Clase Sitio, kv.
-- Calcula: PGA×2/3, kh, kv, ángulo ψ Mononobe-Okabe.
-- 8 subtipos: muros, gaviones, geocelda, tablestaca, talud, pilote, etc.
+### Tres metodologías
+1. **Edificios** (ASCE 7-05 + REP-21): Cs, espectro, CDS.
+2. **Vivienda** (REP-21 Cap. 7): densidad mínima de paredes.
+3. **Geotecnia** (REP-21 Cap. 6): kh, kv, ψ Mononobe-Okabe.
 
 ### Reporte PDF
-- Memoria técnica completa por tipo de estructura.
-- Formato Carta 8.5 × 11".
-- Footer permanente "Aplicación desarrollada por LMM Ingeniería".
-- Hash único de trazabilidad.
+- Carta 8.5×11".
+- Memoria técnica completa por metodología.
+- Footer "Aplicación desarrollada por LMM Ingeniería".
 
 ## Estructura
 
@@ -47,8 +40,8 @@ sismo/
 ├── data/
 │   ├── manifest.json
 │   └── v1.0/
-│       ├── pga.json, ss.json, s1.json
-│       └── contours.json
+│       ├── pga.json, ss.json, s1.json  (rasters)
+│       └── contours.json                (oficial + nacional)
 ├── lib/
 │   ├── raster.js
 │   ├── seismic-calc.js
@@ -56,9 +49,14 @@ sismo/
 └── README.md
 ```
 
+## Fuentes de datos
+
+- **Mapas oficiales (zona Panamá-Colón):** ArcGIS oficial del REP — Junta Técnica de Ingenieros y Arquitectos, Autoridad del Canal de Panamá, Esri Panamá, Colegio de Ingenieros Civiles. Item ID: `d0329ac9f4b3467a8657429501e43b46`.
+- **Raster nacional:** GeoTIFFs oficiales del REP-2021 Anexo 3.
+
 ## Aviso legal
 
-Esta herramienta es de **referencia**. El uso técnico es **responsabilidad exclusiva del ingeniero usuario**. La responsabilidad del diseño sísmico recae enteramente sobre el profesional firmante.
+Herramienta de referencia. El uso técnico es responsabilidad exclusiva del ingeniero usuario. La responsabilidad del diseño sísmico recae enteramente sobre el profesional firmante.
 
 ## Licencia
 
