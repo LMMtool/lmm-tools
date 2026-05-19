@@ -9,19 +9,24 @@
   "license": "MIT",
   "changelog": [
     {
+      "version": "v1.0.3",
+      "date": "2026-05-16",
+      "notes": "Curvas vectoriales OFICIALES del REP integradas desde el ArcGIS de JTIA + ACP + Esri Panamá. Zona Panamá-Colón usa datos oficiales cada 0.02 g. Resto del país usa curvas suavizadas del raster nacional. Color único corporativo (sin saturación multicolor). Curvas mayores cada 0.10 g + curvas menores cada 0.02 g con jerarquía visual."
+    },
+    {
       "version": "v1.0.2",
       "date": "2026-05-16",
-      "notes": "Curvas con esquinas redondas (spline) cada 0.04 g. Etiquetas embebidas sobre la línea al hacer zoom. Inputs blancos con borde gris. Tres metodologías diferenciadas: edificios (ASCE 7-05), vivienda unifamiliar simplificada (REP-21 Cap. 7) y geotécnica pseudoestática (REP-21 Cap. 6). Fix del espectro distorsionado en PC."
+      "notes": "Tres metodologías separadas: edificios (ASCE 7-05), vivienda simplificada (Cap. 7), geotecnia pseudoestática (Cap. 6). Inputs blancos. Fix espectro distorsionado."
     },
     {
       "version": "v1.0.1",
       "date": "2026-05-15",
-      "notes": "Paleta azul corporativa, curvas isosísmicas iniciales, submenú de estructuras geotécnicas, sistema estructural personalizado con R/Ω₀/Cd manuales."
+      "notes": "Paleta azul corporativa, curvas isosísmicas, submenú geotécnico, sistema custom."
     },
     {
       "version": "v1.0",
       "date": "2026-05-15",
-      "notes": "Lanzamiento inicial. Mapas oficiales REP-21 (PGA, Ss, S1). Calculadora de coeficiente sísmico Cs."
+      "notes": "Lanzamiento inicial. Mapas REP-21, calculadora Cs."
     }
   ]
 }
