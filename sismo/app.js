@@ -1,5 +1,5 @@
 // ============================================================
-// SISMOPANAMA v1.0.2 - © LMM Ingeniería 2026
+// SISMOPANAMA v1.0.3 - © LMM Ingeniería 2026
 // ============================================================
 
 proj4.defs("EPSG:32617", "+proj=utm +zone=17 +datum=WGS84 +units=m +no_defs");
@@ -25,31 +25,29 @@ let lastResult = null;
 let lastCoord = null;
 let spectrumChart = null;
 
-// Escala de color por valor de aceleración - paleta corporativa
-function colorForContour(layer, value) {
-  const ranges = {
-    'ss':  { min: 0.6, max: 2.0 },
-    's1':  { min: 0.24, max: 0.76 },
-    'pga': { min: 0.24, max: 0.88 }
-  };
-  const r = ranges[layer];
-  const norm = Math.max(0, Math.min(1, (value - r.min) / (r.max - r.min)));
-  // Azul claro -> medio -> oscuro -> naranja -> rojo
-  if (norm < 0.20) return '#4A90C4';
-  if (norm < 0.40) return '#2D6A9F';
-  if (norm < 0.60) return '#1E3A5F';
-  if (norm < 0.80) return '#D97706';
-  return '#DC2626';
+// Bounding box del área oficial (datos vectoriales del REP)
+const OFFICIAL_BBOX = { west: -80.91, east: -78.04, south: 8.27, north: 9.59 };
+
+// Color único corporativo - sin saturación multicolor
+function colorForContour(layer, value, isMajor) {
+  // Un solo tono según importancia
+  // Curvas mayores (cada 0.10g) - azul oscuro
+  // Curvas menores - azul medio
+  if (isMajor) return '#1E3A5F'; // primario
+  return '#4A90C4'; // highlight
 }
 
 function isMajorContour(value, layer) {
-  // Curvas mayores cada 0.10 g (Ss) o 0.04 g x 2 = 0.08 (S1/PGA) - usar 0.10
-  if (layer === 'ss') return Math.abs(value % 0.20) < 0.005;
-  return Math.abs(value % 0.10) < 0.005;
+  // Cada 0.10 g es mayor (etiquetada y gruesa)
+  return Math.abs((value * 100) % 10) < 0.5 || Math.abs((value * 100) % 10) > 9.5;
 }
 
-function widthForContour(value, layer) {
-  return isMajorContour(value, layer) ? 2.2 : 1.0;
+function widthForContour(value, isOficial, isMajor) {
+  if (isOficial) {
+    return isMajor ? 1.8 : 0.9;
+  } else {
+    return isMajor ? 2.0 : 1.1;
+  }
 }
 
 async function init() {
@@ -138,122 +136,147 @@ function renderContours() {
   contourLayer.clearLayers();
   labelLayer.clearLayers();
 
-  const contours = manager.getContours(currentLayer);
-  if (!contours) return;
+  const data = manager.getContours(currentLayer);
+  if (!data) return;
 
-  contours.forEach(level => {
-    const color = colorForContour(currentLayer, level.value);
-    const width = widthForContour(level.value, currentLayer);
-    
-    level.paths.forEach(path => {
-      const latlngs = path.map(p => [p[1], p[0]]);
-      L.polyline(latlngs, {
-        color: color,
-        weight: width,
-        opacity: 0.9,
-        smoothFactor: 1.5,
-        lineCap: 'round',
-        lineJoin: 'round'
-      }).addTo(contourLayer);
+  // Renderizar curvas NACIONALES primero (debajo)
+  if (data.nacional) {
+    data.nacional.forEach(level => {
+      const major = isMajorContour(level.value, currentLayer);
+      const color = colorForContour(currentLayer, level.value, major);
+      const width = widthForContour(level.value, false, major);
+      
+      level.paths.forEach(path => {
+        const latlngs = path.map(p => [p[1], p[0]]);
+        L.polyline(latlngs, {
+          color: color,
+          weight: width,
+          opacity: 0.7,
+          smoothFactor: 1.0,
+          lineCap: 'round',
+          lineJoin: 'round'
+        }).addTo(contourLayer);
+      });
     });
-  });
+  }
+
+  // Renderizar curvas OFICIALES (encima, más detalladas)
+  if (data.oficial) {
+    data.oficial.forEach(level => {
+      const major = isMajorContour(level.value, currentLayer);
+      const color = colorForContour(currentLayer, level.value, major);
+      const width = widthForContour(level.value, true, major);
+      
+      level.paths.forEach(path => {
+        const latlngs = path.map(p => [p[1], p[0]]);
+        L.polyline(latlngs, {
+          color: color,
+          weight: width,
+          opacity: 0.9,
+          smoothFactor: 1.0,
+          lineCap: 'round',
+          lineJoin: 'round'
+        }).addTo(contourLayer);
+      });
+    });
+  }
 
   updateLegend();
   updateLabels();
 }
 
-// Etiquetas embebidas SOBRE la línea (estilo topográfico) — solo cuando zoom es alto
 function updateLabels() {
   if (!manager || !manager.loaded) return;
   labelLayer.clearLayers();
   
   const zoom = map.getZoom();
-  // No mostrar etiquetas hasta zoom 9
   if (zoom < 9) return;
   
-  const contours = manager.getContours(currentLayer);
-  if (!contours) return;
+  const data = manager.getContours(currentLayer);
+  if (!data) return;
 
   const bounds = map.getBounds();
   
-  contours.forEach(level => {
-    // Decidir si etiquetar este nivel según zoom
-    let etiquetar;
-    if (zoom >= 11) {
-      // Zoom alto: todas las curvas
-      etiquetar = true;
-    } else if (zoom >= 10) {
-      // Solo mayores y medias
-      etiquetar = isMajorContour(level.value, currentLayer) || 
-                  (currentLayer === 'ss' ? Math.abs(level.value % 0.08) < 0.005 : Math.abs(level.value % 0.08) < 0.005);
-    } else {
-      // Solo curvas mayores
-      etiquetar = isMajorContour(level.value, currentLayer);
-    }
-    if (!etiquetar) return;
-
-    level.paths.forEach(path => {
-      if (path.length < 6) return;
+  function addLabelsFor(contours, isOficial) {
+    contours.forEach(level => {
+      const major = isMajorContour(level.value, currentLayer);
       
-      // Calcular puntos donde colocar etiquetas a lo largo de la línea
-      // Posición: ~mitad del path, y opcionalmente más etiquetas en paths largos
-      const numLabels = Math.min(Math.floor(path.length / 40) + 1, 3);
-      
-      for (let labelIdx = 0; labelIdx < numLabels; labelIdx++) {
-        // Posición uniforme a lo largo del path
-        const idx = Math.floor(path.length * (labelIdx + 1) / (numLabels + 1));
-        const p1 = path[idx];
-        const p2 = path[Math.min(idx + 2, path.length - 1)];
-        if (!p1 || !p2) continue;
-        
-        // Solo etiquetar si está dentro del viewport
-        if (!bounds.contains([p1[1], p1[0]])) continue;
-        
-        // Calcular ángulo del segmento para rotar la etiqueta
-        const dx = p2[0] - p1[0];
-        const dy = p2[1] - p1[1];
-        let angle = Math.atan2(-dy, dx) * 180 / Math.PI;
-        // Mantener legible: nunca de cabeza
-        if (angle > 90) angle -= 180;
-        if (angle < -90) angle += 180;
-        
-        const labelText = level.value.toFixed(2);
-        const labelIcon = L.divIcon({
-          className: 'contour-label-wrapper',
-          html: `<div class="contour-label-inline" style="transform: rotate(${angle}deg);">${labelText}</div>`,
-          iconSize: [30, 14],
-          iconAnchor: [15, 7]
-        });
-        L.marker([p1[1], p1[0]], { 
-          icon: labelIcon,
-          interactive: false,
-          keyboard: false,
-          zIndexOffset: 200
-        }).addTo(labelLayer);
+      // Decidir cuándo etiquetar
+      let etiquetar;
+      if (zoom >= 12) {
+        etiquetar = true; // Todas en zoom muy cercano
+      } else if (zoom >= 10) {
+        etiquetar = major || (isOficial && level.value % 0.04 < 0.01);
+      } else {
+        etiquetar = major;
       }
+      if (!etiquetar) return;
+
+      level.paths.forEach(path => {
+        if (path.length < 4) return;
+        
+        // Una etiqueta cada N puntos
+        const numLabels = Math.min(Math.max(1, Math.floor(path.length / 60)), 2);
+        
+        for (let li = 0; li < numLabels; li++) {
+          const idx = Math.floor(path.length * (li + 1) / (numLabels + 1));
+          const p1 = path[idx];
+          const p2 = path[Math.min(idx + 2, path.length - 1)];
+          if (!p1 || !p2) continue;
+          
+          if (!bounds.contains([p1[1], p1[0]])) continue;
+          
+          // Calcular ángulo para rotar
+          const dx = p2[0] - p1[0];
+          const dy = p2[1] - p1[1];
+          let angle = Math.atan2(-dy, dx) * 180 / Math.PI;
+          if (angle > 90) angle -= 180;
+          if (angle < -90) angle += 180;
+          
+          const labelText = level.value.toFixed(2);
+          const labelIcon = L.divIcon({
+            className: 'contour-label-wrapper',
+            html: `<div class="contour-label-inline" style="transform: rotate(${angle}deg);">${labelText}</div>`,
+            iconSize: [30, 14],
+            iconAnchor: [15, 7]
+          });
+          L.marker([p1[1], p1[0]], { 
+            icon: labelIcon,
+            interactive: false,
+            keyboard: false,
+            zIndexOffset: 200
+          }).addTo(labelLayer);
+        }
+      });
     });
-  });
+  }
+
+  if (data.oficial) addLabelsFor(data.oficial, true);
+  if (data.nacional) addLabelsFor(data.nacional, false);
 }
 
 function updateLegend() {
   const labels = {
-    'ss':  { name: 'Ss (0.2 s)',  levels: [0.7, 1.0, 1.3, 1.6, 1.9] },
-    's1':  { name: 'S₁ (1.0 s)',  levels: [0.28, 0.40, 0.52, 0.64, 0.75] },
-    'pga': { name: 'PGA (0 s)',   levels: [0.28, 0.40, 0.52, 0.68, 0.84] }
+    'ss':  'Ss (T=0.2 s)',
+    's1':  'S₁ (T=1.0 s)',
+    'pga': 'PGA (T=0)'
   };
-  document.getElementById('legend-period').textContent = labels[currentLayer].name;
+  document.getElementById('legend-period').textContent = labels[currentLayer];
   
   const scale = document.getElementById('legend-scale');
-  scale.innerHTML = '';
-  labels[currentLayer].levels.forEach(v => {
-    const item = document.createElement('div');
-    item.className = 'legend-item';
-    item.innerHTML = `
-      <div class="legend-line" style="background:${colorForContour(currentLayer, v)}"></div>
-      <span>${v.toFixed(2)} g</span>
-    `;
-    scale.appendChild(item);
-  });
+  scale.innerHTML = `
+    <div class="legend-item">
+      <div class="legend-line" style="background:#1E3A5F; height: 2px;"></div>
+      <span>Curva mayor (cada 0.10 g)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-line" style="background:#4A90C4; height: 1.2px;"></div>
+      <span>Curva menor (cada 0.02 g)</span>
+    </div>
+    <div class="legend-item" style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #E5E7EB;">
+      <span style="font-size: 9px; color: #6B7280;">Datos oficiales en zona Panamá-Colón</span>
+    </div>
+  `;
 }
 
 function setLayer(layer, event) {
@@ -331,6 +354,10 @@ function queryCoord() {
   }
 
   const utm = latLngToUTM(coord.lat, coord.lng);
+  
+  // Detectar si está en zona oficial
+  const enZonaOficial = (coord.lng >= OFFICIAL_BBOX.west && coord.lng <= OFFICIAL_BBOX.east &&
+                        coord.lat >= OFFICIAL_BBOX.south && coord.lat <= OFFICIAL_BBOX.north);
 
   if (marker) map.removeLayer(marker);
   marker = L.circleMarker([coord.lat, coord.lng], {
@@ -346,6 +373,10 @@ function queryCoord() {
     `<strong>S₁</strong> ${vals.s1.toFixed(3)} g`
   ).openPopup();
   map.setView([coord.lat, coord.lng], Math.max(map.getZoom(), 9));
+
+  const zonaInfo = enZonaOficial 
+    ? '<span style="color: #1E3A5F; font-weight: 700;">Zona Panamá-Colón (datos detallados)</span>'
+    : '<span>Zona nacional</span>';
 
   document.getElementById('results-pane').innerHTML = `
     <div class="result-grid">
@@ -364,6 +395,7 @@ function queryCoord() {
     </div>
     <div class="info-row"><span class="k">LAT / LONG</span><span class="v">${coord.lat.toFixed(4)}, ${coord.lng.toFixed(4)}</span></div>
     <div class="info-row"><span class="k">UTM 17N</span><span class="v">${utm.e.toLocaleString('es-PA')}, ${utm.n.toLocaleString('es-PA')}</span></div>
+    <div class="info-row"><span class="k">UBICACIÓN</span><span class="v">${zonaInfo}</span></div>
     <div class="info-row"><span class="k">PERÍODO RETORNO</span><span class="v">2500 años</span></div>
     <div class="info-row"><span class="k">CLASE SITIO</span><span class="v">B (referencia)</span></div>
     <div class="info-row"><span class="k">AMORTIGUAMIENTO</span><span class="v">5 %</span></div>
@@ -386,7 +418,6 @@ function onTipoEstructuraChange() {
   document.getElementById('campos-geotecnia').style.display = 
     (tipo === 'geotecnica') ? 'block' : 'none';
   
-  // Ocultar resultados anteriores al cambiar
   document.getElementById('calc-results').style.display = 'none';
   document.getElementById('spectrum-section').style.display = 'none';
   document.getElementById('btn-pdf').style.display = 'none';
@@ -418,7 +449,7 @@ function onSistemaChange() {
 
 function calcular() {
   if (!manager || !manager.loaded) {
-    alert('Los datos aún no han cargado. Esperá un momento.');
+    alert('Los datos aún no han cargado.');
     return;
   }
   const coord = getCurrentLatLng();
@@ -446,7 +477,7 @@ function calcular() {
     input.periodo = parseFloat(document.getElementById('periodo').value);
     
     if (isNaN(input.periodo) || input.periodo <= 0) {
-      alert('Período debe ser un número positivo.');
+      alert('Período debe ser positivo.');
       return;
     }
     
@@ -584,9 +615,7 @@ function renderResultadosGeotecnia(r) {
 }
 
 function renderSpectrum(result) {
-  // Fix bug Chart.js distorsión PC: forzar resize antes
   const canvas = document.getElementById('spectrum-chart');
-  const wrap = canvas.parentElement;
   canvas.style.width = '100%';
   canvas.style.height = '200px';
   
@@ -688,7 +717,6 @@ function renderChangelog() {
 
 document.addEventListener('DOMContentLoaded', init);
 
-// Exports
 window.setCoordMode = setCoordMode;
 window.setLayer = setLayer;
 window.queryCoord = queryCoord;
