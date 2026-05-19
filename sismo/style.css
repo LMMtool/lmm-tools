@@ -614,3 +614,304 @@ footer span { color: rgba(255,255,255,0.7); margin: 0 8px; }
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   SISMOPANAMA v2.0 — NUEVOS ESTILOS
+============================================================ */
+
+/* Header v2 con badge */
+.version-badge {
+  background: var(--accent);
+  color: white;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+
+/* Info icon (tooltip) */
+.info-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  background: var(--bg-soft);
+  color: var(--accent);
+  border: 1px solid var(--border-light);
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: 4px;
+  vertical-align: middle;
+  user-select: none;
+  transition: all 0.15s;
+}
+.info-icon:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* Info banner */
+.info-banner {
+  background: linear-gradient(to right, #EFF6FF, #F5F7FA);
+  border-left: 3px solid var(--accent);
+  padding: 8px 10px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text);
+  border-radius: 0 4px 4px 0;
+  line-height: 1.45;
+}
+
+/* Grids */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.grid-2 > div, .grid-3 > div { display: flex; flex-direction: column; }
+.grid-2 label, .grid-3 label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+
+/* Custom system panel */
+.custom-system-panel {
+  background: var(--bg-soft);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 6px;
+}
+
+/* Checkbox row */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text);
+  margin-bottom: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.checkbox-row input { width: auto !important; }
+
+/* CDS badges con color */
+.cds-badge.cds-A, .cds-badge.cds-B { background: #10B981; }
+.cds-badge.cds-C { background: #F59E0B; }
+.cds-badge.cds-D { background: #EA580C; }
+.cds-badge.cds-E { background: #DC2626; }
+.cds-badge.cds-F { background: #7C1D6F; }
+
+/* Resumen grid (key-value pairs en grid 2 cols) */
+.resumen-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin-top: 10px;
+}
+.resumen-grid .info-row {
+  padding: 6px 10px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* Memoria de cálculo */
+.memoria-section {
+  background: var(--bg-soft);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 12px;
+}
+.memoria-titulo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--primary);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-light);
+}
+.memoria-paso {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border-light);
+}
+.memoria-paso:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.memoria-paso-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  margin-bottom: 4px;
+}
+.memoria-formula {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text);
+  padding: 2px 0;
+  line-height: 1.5;
+}
+.memoria-ref {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  font-style: italic;
+}
+.memoria-nota {
+  background: #FEF3C7;
+  border-left: 3px solid #F59E0B;
+  padding: 4px 8px;
+  margin: 4px 0;
+  font-size: 10px;
+  color: #92400E;
+  border-radius: 0 3px 3px 0;
+}
+
+/* Advertencias agrupadas */
+.adv-section {
+  margin-top: 14px;
+  padding: 10px;
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+}
+.adv-titulo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--primary);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-light);
+}
+.adv-item {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  border-left: 3px solid;
+}
+.adv-icon {
+  font-size: 14px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+.adv-body { flex: 1; }
+.adv-msg {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.adv-req {
+  margin-top: 4px;
+  padding: 4px 6px;
+  background: rgba(0,0,0,0.05);
+  font-size: 10px;
+  border-radius: 3px;
+}
+.adv-ref {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 3px;
+  font-style: italic;
+}
+.adv-ref-inline {
+  font-size: 9px;
+  color: var(--text-dim);
+}
+.warn-critica {
+  background: #FEE2E2;
+  border-left-color: #DC2626;
+  color: #7F1D1D;
+}
+.warn-media {
+  background: #FEF3C7;
+  border-left-color: #F59E0B;
+  color: #78350F;
+}
+.warn-meto {
+  background: #DBEAFE;
+  border-left-color: var(--accent);
+  color: #1E3A8A;
+}
+.warn-info {
+  background: #F3F4F6;
+  border-left-color: #6B7280;
+  color: var(--text);
+}
+
+/* Caja OK */
+.ok-box {
+  background: rgba(16,185,129,0.1);
+  border-left: 3px solid #10B981;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 4px;
+  color: #065F46;
+  font-size: 12px;
+}
+
+/* Tabla envolvente kv */
+.kv-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+}
+.kv-table th {
+  background: var(--primary);
+  color: white;
+  padding: 4px 6px;
+  text-align: left;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.kv-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border-light);
+}
+.kv-table tr.kv-gobierna {
+  background: #FEF3C7;
+  font-weight: 700;
+}
+.kv-table tr.kv-gobierna td {
+  color: #78350F;
+}
+
+/* Glosario modal */
+.glosario-item {
+  padding: 10px;
+  margin-bottom: 8px;
+  background: var(--bg-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+}
+.glosario-titulo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.glosario-desc {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.45;
+  margin-bottom: 4px;
+}
+.glosario-ref {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+}
