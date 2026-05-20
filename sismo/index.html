@@ -1,421 +1,484 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Visor REP-21 y calculadora sísmica para Panamá v2.0. Herramienta generada por LMM Ingeniería.">
-<meta name="author" content="LMM Ingeniería">
-<title>SismoPanamá v2.0 — REP-21 · LMM Ingeniería</title>
+// ============================================================
+// SISMOPANAMA v2.0 - Generador PDF
+// © LMM Ingeniería 2026
+// ============================================================
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="style.css"/>
+async function generarReportePDF(resultado, coord, espectroChart) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'letter'
+  });
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-</head>
-<body>
+  const PAGE_W = 215.9;
+  const PAGE_H = 279.4;
+  const MARGIN = 15;
+  const CONTENT_W = PAGE_W - 2 * MARGIN;
+  let y = MARGIN;
 
-<header>
-  <div class="header-left">
-    <div class="logo">SISMO<span>·</span>PANAMA</div>
-    <div class="version-badge" id="version-badge">v2.0</div>
-  </div>
-  <div class="header-right">
-    <span class="subtitle">REP-21 · LMM Ingeniería</span>
-    <a href="#" onclick="showModal('modal-metodologia'); return false;">Metodología</a>
-    <a href="#" onclick="showModal('modal-glosario'); return false;">Glosario</a>
-    <a href="#" onclick="showModal('modal-acerca'); return false;">Acerca de</a>
-  </div>
-</header>
+  const PRIMARY = [30, 58, 95];
+  const ACCENT = [45, 106, 159];
+  const HIGHLIGHT = [74, 144, 196];
+  const TEXT = [26, 26, 46];
+  const GRAY = [107, 114, 128];
+  const SOFT = [245, 247, 250];
 
-<aside id="sidebar">
-  <div class="tabs">
-    <button class="tab active" data-tab="consulta">Consulta</button>
-    <button class="tab" data-tab="calculo">Cálculo</button>
-  </div>
+  // HEADER
+  doc.setFillColor(...PRIMARY);
+  doc.rect(0, 0, PAGE_W, 24, 'F');
+  doc.setFillColor(...ACCENT);
+  doc.rect(0, 24, PAGE_W, 1.5, 'F');
+  
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(17);
+  doc.text('SISMO·PANAMA', MARGIN, 13);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...HIGHLIGHT);
+  doc.text('REPORTE DE DISEÑO SÍSMICO — REP-21', MARGIN, 19);
+  
+  const fecha = new Date().toLocaleDateString('es-PA', { year: 'numeric', month: 'long', day: 'numeric' });
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.text(fecha, PAGE_W - MARGIN, 13, { align: 'right' });
+  
+  const hash = generarHash(coord, resultado);
+  doc.setFontSize(7);
+  doc.setTextColor(...HIGHLIGHT);
+  doc.text(`ID: ${hash}`, PAGE_W - MARGIN, 19, { align: 'right' });
+  
+  y = 34;
 
-  <!-- TAB CONSULTA -->
-  <div class="tab-content active" id="tab-consulta">
-    <div class="section">
-      <div class="section-label">Coordenada del sitio</div>
-      <div class="mode-toggle">
-        <button class="active" onclick="setCoordMode('geo', event)">LAT / LONG</button>
-        <button onclick="setCoordMode('utm', event)">UTM 17N</button>
-      </div>
-      <div id="geo-inputs" class="coord-inputs">
-        <div><label>LATITUD °N</label><input type="number" id="lat-input" step="0.0001" value="8.9824"></div>
-        <div><label>LONGITUD °W</label><input type="number" id="lng-input" step="0.0001" value="-79.5199"></div>
-      </div>
-      <div id="utm-inputs" class="coord-inputs" style="display:none;">
-        <div><label>ESTE (m)</label><input type="number" id="utm-e-input" step="1" value="664000"></div>
-        <div><label>NORTE (m)</label><input type="number" id="utm-n-input" step="1" value="993000"></div>
-      </div>
-      <button class="btn-primary" onclick="queryCoord()">CONSULTAR PUNTO</button>
-    </div>
+  doc.setTextColor(...PRIMARY);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text('Parámetros Sísmicos de Diseño', MARGIN, y);
+  y += 8;
 
-    <div class="section">
-      <div class="section-label">Capa visible</div>
-      <div class="layer-toggle">
-        <button class="active" onclick="setLayer('ss', event)">Ss</button>
-        <button onclick="setLayer('s1', event)">S₁</button>
-        <button onclick="setLayer('pga', event)">PGA</button>
-      </div>
-    </div>
+  // 1. UBICACIÓN
+  y = seccionTitulo(doc, '1. Ubicación del Proyecto', y, MARGIN, ACCENT);
+  y = renderTabla(doc, [
+    ['Latitud',  `${coord.lat.toFixed(4)}° N`],
+    ['Longitud', `${coord.lng.toFixed(4)}° W`],
+    ['UTM 17N (Este)',  `${coord.utm.e.toLocaleString('es-PA')} m`],
+    ['UTM 17N (Norte)', `${coord.utm.n.toLocaleString('es-PA')} m`],
+  ], y, MARGIN, CONTENT_W, SOFT, TEXT, GRAY);
 
-    <div class="section">
-      <div class="section-label">Resultados</div>
-      <div id="results-pane">
-        <div class="empty-state">Cargando mapas REP-21...</div>
-      </div>
-    </div>
+  // 2. MAPA
+  y = seccionTitulo(doc, '2. Aceleraciones del Mapa REP-21', y, MARGIN, ACCENT);
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8);
+  doc.setTextColor(...GRAY);
+  doc.text('Clase Sitio B, periodo retorno 2500 años, 5% amortiguamiento.', MARGIN, y);
+  y += 5;
+  y = renderTabla(doc, [
+    ['PGA (T = 0 s)',  `${resultado.input.pga.toFixed(3)} g`],
+    ['Ss (T = 0.2 s)', `${resultado.input.ss.toFixed(3)} g`],
+    ['S₁ (T = 1.0 s)', `${resultado.input.s1.toFixed(3)} g`],
+  ], y, MARGIN, CONTENT_W, SOFT, TEXT, GRAY);
 
-    <div class="disclaimer">
-      <strong class="disclaimer-title">AVISO</strong>
-      Herramienta generada por <strong>LMM Ingeniería</strong>. Valores derivados del REP-21 oficial. Para diseño formal, verificar contra el reglamento. El usuario es responsable del uso técnico.
-    </div>
-  </div>
+  // 3. METODOLOGÍA
+  y = seccionTitulo(doc, '3. Metodología', y, MARGIN, ACCENT);
+  y = renderTabla(doc, [['Norma aplicada', resultado.metodo]], y, MARGIN, CONTENT_W, SOFT, TEXT, GRAY);
 
-  <!-- TAB CÁLCULO -->
-  <div class="tab-content" id="tab-calculo">
-    <div class="section">
-      <div class="section-label">1. Tipo de estructura <span class="info-icon" data-glos="metodo">ⓘ</span></div>
-      <select id="tipo-estructura" class="select-full" onchange="onTipoEstructuraChange()">
-        <option value="edificio">Edificio (ASCE 7-05 + REP-21)</option>
-        <option value="infra">Infraestructura Grupo 2</option>
-        <option value="vivienda">Vivienda Unifamiliar (Cap. 7)</option>
-        <option value="geotecnica">Estructura Geotécnica (Cap. 6)</option>
-      </select>
-    </div>
+  // ROUTING SEGÚN TIPO
+  if (resultado.input.tipoEstructura === 'vivienda') {
+    y = reporteVivienda(doc, resultado, y, MARGIN, CONTENT_W, PAGE_H, ACCENT, PRIMARY, HIGHLIGHT, SOFT, TEXT, GRAY);
+  } else if (resultado.input.tipoEstructura === 'geotecnica') {
+    y = reporteGeotecnia(doc, resultado, y, MARGIN, CONTENT_W, PAGE_H, ACCENT, PRIMARY, HIGHLIGHT, SOFT, TEXT, GRAY);
+  } else {
+    y = await reporteEdificio(doc, resultado, espectroChart, y, MARGIN, CONTENT_W, PAGE_H, ACCENT, PRIMARY, HIGHLIGHT, SOFT, TEXT, GRAY);
+  }
 
-    <!-- ===== ESPECTRO: Ss / S1 / PGA modo dual ===== -->
-    <div class="section" id="seccion-espectro">
-      <div class="section-label">Aceleraciones espectrales</div>
-      <div class="mode-toggle">
-        <button class="active" id="btn-espectro-auto" onclick="setEspectroMode('auto', event)">DESDE MAPA</button>
-        <button id="btn-espectro-manual" onclick="setEspectroMode('manual', event)">MANUAL</button>
-      </div>
-      <div id="espectro-auto-info" class="info-banner">
-        Valores cargados automáticamente de los mapas REP-21 (Clase B) según la coordenada del sitio.
-      </div>
-      <div id="espectro-manual-inputs" style="display:none;">
-        <div class="grid-3">
-          <div>
-            <label>Ss (g) <span class="info-icon" data-glos="Ss">ⓘ</span></label>
-            <input type="number" id="ss-manual" step="0.01" min="0" value="">
-          </div>
-          <div>
-            <label>S₁ (g) <span class="info-icon" data-glos="S1">ⓘ</span></label>
-            <input type="number" id="s1-manual" step="0.01" min="0" value="">
-          </div>
-          <div>
-            <label>PGA (g) <span class="info-icon" data-glos="PGA">ⓘ</span></label>
-            <input type="number" id="pga-manual" step="0.01" min="0" value="">
-          </div>
-        </div>
-        <div class="hint">Para uso con estudio específico de sitio (REP-21 §5.11), mapas URC ACP 2009 (REP-21 §3.2), o análisis dinámico de respuesta de sitio (ASCE 7-05 Cap. 21).</div>
-      </div>
-    </div>
-
-    <!-- Campos EDIFICIO / INFRAESTRUCTURA -->
-    <div id="campos-edificio">
-      <div class="section">
-        <div class="section-label">2. Clase de sitio <span class="info-icon" data-glos="ClaseSitio">ⓘ</span></div>
-        <select id="clase-sitio" class="select-full">
-          <option value="A">A — Roca dura</option>
-          <option value="B" selected>B — Roca</option>
-          <option value="C">C — Suelo muy denso / roca blanda</option>
-          <option value="D">D — Suelo rígido</option>
-          <option value="E">E — Suelo blando</option>
-          <option value="F">F — Requiere estudio (bloqueado)</option>
-        </select>
-      </div>
-
-      <div class="section">
-        <div class="section-label">3. Categoría de riesgo <span class="info-icon" data-glos="Riesgo">ⓘ</span></div>
-        <select id="riesgo" class="select-full">
-          <option value="I">I — Bajo riesgo (Ie = 1.00)</option>
-          <option value="II" selected>II — Ordinarias (Ie = 1.00)</option>
-          <option value="III">III — Importantes (Ie = 1.25)</option>
-          <option value="IV">IV — Esenciales (Ie = 1.50)</option>
-        </select>
-      </div>
-
-      <div class="section">
-        <div class="section-label">4. Sistema estructural <span class="info-icon" data-glos="R">ⓘ</span></div>
-        <select id="categoria-sistema" class="select-full" onchange="updateSistemas()">
-          <option value="concreto">Concreto Reforzado</option>
-          <option value="acero">Acero</option>
-          <option value="mamposteria">Mampostería</option>
-          <option value="otros">Otros / Personalizado</option>
-        </select>
-        <select id="sistema" class="select-full" style="margin-top:6px;" onchange="onSistemaChange()"></select>
-        <div id="sistema-info-box" class="info-banner" style="display:none;"></div>
-        
-        <div id="custom-system-panel" class="custom-system-panel" style="display:none;">
-          <div class="hint" style="margin-bottom: 8px;"><strong>Sistema personalizado.</strong> Consultar Tabla 12.2-1 ASCE 7-05 para R, Ω₀, Cd y verificar permisibilidad por CDS. Usuario asume responsabilidad.</div>
-          <div class="grid-2">
-            <div style="grid-column: span 2;">
-              <label>Nombre / descripción</label>
-              <input type="text" id="custom-nombre" class="input-full" placeholder="ej: Sistema dual SMRF + SCBF">
-            </div>
-            <div style="grid-column: span 2;">
-              <label>Referencia tabla 12.2-1 (opcional)</label>
-              <input type="text" id="custom-ref" class="input-full" placeholder="ej: Tabla 12.2-1 fila D2">
-            </div>
-          </div>
-          <div class="grid-3" style="margin-top: 6px;">
-            <div>
-              <label>R <span class="info-icon" data-glos="R">ⓘ</span></label>
-              <input type="number" id="custom-R" step="0.1" min="0.5" max="10" value="5.0">
-            </div>
-            <div>
-              <label>Ω₀ <span class="info-icon" data-glos="Omega">ⓘ</span></label>
-              <input type="number" id="custom-omega" step="0.1" min="1" max="5" value="2.5">
-            </div>
-            <div>
-              <label>Cd <span class="info-icon" data-glos="Cd">ⓘ</span></label>
-              <input type="number" id="custom-Cd" step="0.1" min="0.5" max="10" value="4.5">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-label">5. Altura del edificio hn (m) <span class="info-icon" data-glos="hn">ⓘ</span></div>
-        <input type="number" id="hn-edif" class="input-full" step="0.1" value="9.0" min="2">
-        <div class="hint">Altura desde la base hasta nivel superior estructural (azotea, sin penthouse pequeño).</div>
-      </div>
-
-      <div class="section">
-        <div class="section-label">6. Período T <span class="info-icon" data-glos="T">ⓘ</span></div>
-        <select id="modo-periodo" class="select-full" onchange="onModoPeriodoChange()">
-          <option value="auto" selected>Automático (Cu · Ta) — recomendado</option>
-          <option value="manual">Manual (T del análisis modal)</option>
-          <option value="ta">Ta puro (sin amplificar, conservador)</option>
-        </select>
-        <div id="periodo-auto-info" class="info-banner">
-          T se calculará automáticamente con Ta = Ct·hn^x (Ec. 12.8-7) y Cu de la Tabla 12.8-1.
-        </div>
-        <div id="periodo-manual-input" style="display:none; margin-top:6px;">
-          <label>T (s) — del análisis modal</label>
-          <input type="number" id="periodo-manual-val" class="input-full" step="0.01" value="0.5" min="0.05">
-          <div class="hint">Si T > Cu·Ta, ASCE 7-05 §12.8.2 limita a Cu·Ta.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Campos VIVIENDA -->
-    <div id="campos-vivienda" style="display:none;">
-      <div class="warning-box">
-        <strong>METODOLOGÍA SIMPLIFICADA</strong> — REP-21 Capítulo 7. Aplica solo a viviendas unifamiliares de una planta apoyadas sobre suelo, mampostería confinada (R=1.5, Ω₀=2.5, Cd=1.25).
-      </div>
-
-      <div class="section">
-        <div class="section-label">2. Clase de sitio <span class="info-icon" data-glos="ClaseSitio">ⓘ</span></div>
-        <select id="clase-sitio-viv" class="select-full">
-          <option value="A">A — Roca dura</option>
-          <option value="B" selected>B — Roca</option>
-          <option value="C">C — Suelo muy denso / roca blanda</option>
-          <option value="D">D — Suelo rígido</option>
-          <option value="E">E — Suelo blando (no califica como típica)</option>
-          <option value="F">F — Requiere estudio (bloqueado)</option>
-        </select>
-      </div>
-
-      <div class="section">
-        <div class="section-label">3. Condiciones adicionales</div>
-        <label class="checkbox-row">
-          <input type="checkbox" id="suelos-problema">
-          Arcillas expansivas o suelos susceptibles a licuación
-        </label>
-        <label class="checkbox-row">
-          <input type="checkbox" id="irregularidad">
-          Irregularidad horizontal (Tabla 12.3-1 ASCE 7-05)
-        </label>
-      </div>
-    </div>
-
-    <!-- Campos GEOTECNIA -->
-    <div id="campos-geotecnia" style="display:none;">
-      <div class="warning-box">
-        <strong>ANÁLISIS PSEUDOESTÁTICO</strong> — REP-21 Capítulo 6 + Manual de Geotecnia. NO usa metodología ASCE de edificios. kv obligatorio con envolvente de 3 escenarios (Cuadro 14 Nota 1).
-      </div>
-
-      <div class="section">
-        <div class="section-label">2. Tipo de estructura geotécnica <span class="info-icon" data-glos="tipoMuro">ⓘ</span></div>
-        <select id="tipo-geotecnia" class="select-full" onchange="onTipoGeoChange()"></select>
-        <div id="tipo-geo-info" class="info-banner"></div>
-      </div>
-
-      <div class="section">
-        <div class="section-label">3. Clase de sitio <span class="info-icon" data-glos="ClaseSitio">ⓘ</span></div>
-        <select id="clase-sitio-geo" class="select-full">
-          <option value="A">A — Roca dura</option>
-          <option value="B" selected>B — Roca</option>
-          <option value="C">C — Suelo muy denso / roca blanda</option>
-          <option value="D">D — Suelo rígido</option>
-          <option value="E">E — Suelo blando</option>
-          <option value="F">F — Requiere estudio (bloqueado)</option>
-        </select>
-      </div>
-
-      <div class="section">
-        <div class="section-label">4. Método de cálculo kh <span class="info-icon" data-glos="kh">ⓘ</span></div>
-        <select id="metodo-kh" class="select-full" onchange="onMetodoKhChange()">
-          <option value="A" selected>A — Default REP: kh = (2/3)·PGA/g</option>
-          <option value="B">B — Cuadro 14 ref. 35: kh = SDS/2.5 (requiere Ss/S1 manuales)</option>
-          <option value="C">C — Cuadro 14 ref. 8: kh = f(Apga) no lineal</option>
-          <option value="D">D — Cuadro 14 ref. 25: kh = 0.40·Apga/g</option>
-          <option value="E">E — Muro rígido restringido: kh = Apga/g</option>
-          <option value="F">F — AASHTO preliminar: kh = 1.5·Apga/g</option>
-        </select>
-        <div id="metodo-kh-info" class="info-banner"></div>
-      </div>
-
-      <div class="section">
-        <div class="section-label">5. Coeficiente kv (envolvente) <span class="info-icon" data-glos="kv">ⓘ</span></div>
-        <label>Magnitud de kv como fracción de kh</label>
-        <select id="ratio-kv" class="select-full">
-          <option value="0.5" selected>kv = ±0.50·kh (práctica común, Kramer)</option>
-          <option value="0.67">kv = ±0.67·kh (intermedio)</option>
-          <option value="1.0">kv = ±kh (Cuadro 14 ref. 25, conservador)</option>
-        </select>
-        <div class="info-banner">
-          La app correrá los <strong>3 escenarios obligatorios</strong> (kv=0, +kv, −kv) y mostrará el gobernante. Manual §5.4 Cuadro 14 Nota 1.
-        </div>
-      </div>
-    </div>
-
-    <button class="btn-primary" onclick="calcular()">CALCULAR</button>
-
-    <div class="section" id="calc-results" style="display:none;">
-      <div class="section-label">Resultados</div>
-      <div id="calc-results-content"></div>
-    </div>
-
-    <div class="section" id="spectrum-section" style="display:none;">
-      <div class="section-label">Espectro de diseño</div>
-      <div class="chart-wrap"><canvas id="spectrum-chart"></canvas></div>
-    </div>
-
-    <button class="btn-primary" id="btn-pdf" style="display:none;" onclick="descargarPDF()">DESCARGAR REPORTE PDF</button>
-  </div>
-</aside>
-
-<div id="map"></div>
-<div id="contour-svg-overlay"></div>
-
-<div class="legend" id="legend">
-  <div class="legend-title">Sa (g) — <span id="legend-period">Ss (0.2 s)</span></div>
-  <div class="legend-scale" id="legend-scale"></div>
-</div>
-
-<footer>
-  <span>Herramienta generada por</span>
-  <strong>LMM INGENIERÍA</strong>
-  <span>·</span>
-  <span>SismoPanamá v2.0</span>
-  <span>·</span>
-  <span>Basado en REP-2021</span>
-</footer>
-
-<!-- MODAL Metodología -->
-<div class="modal" id="modal-metodologia" onclick="hideModal('modal-metodologia')">
-  <div class="modal-content" onclick="event.stopPropagation()">
-    <button class="modal-close" onclick="hideModal('modal-metodologia')">×</button>
-    <h2>Metodología v2.0</h2>
-    <p><strong>Fuente normativa:</strong> REP-2021 + ASCE 7-05 + Manual de Geotecnia del REP-2021. Mapas oficiales del Anexo 3 (PGA, Ss, S₁ para Clase Sitio B, período de retorno 2500 años, 5% amortiguamiento).</p>
-
-    <p><strong>Tres metodologías diferenciadas:</strong></p>
-
-    <p><strong>1. Edificios e Infraestructura Grupo 2</strong></p>
-    <ul>
-      <li>ASCE 7-05 completo con modificaciones REP-21.</li>
-      <li>Cs según Ec. 12.8-2/3/4 con límites mín. (12.8-5, 12.8-6).</li>
-      <li>Ta calculado automáticamente (Ec. 12.8-7) con Ct, x según Tabla 12.8-2.</li>
-      <li>Cu según Tabla 12.8-1. T = min(T_manual, Cu·Ta) por §12.8.2.</li>
-      <li>Validación de sistema vs CDS y altura por Tabla 12.2-1.</li>
-      <li>Advertencias automáticas si Fa/Fv requieren análisis específico de sitio.</li>
-      <li>TL = 10 s (REP-21 §5.12.3).</li>
-    </ul>
-
-    <p><strong>2. Vivienda unifamiliar</strong> (REP-21 Cap. 7)</p>
-    <ul>
-      <li>Metodología simplificada — densidad mínima de paredes según PGA.</li>
-      <li>Triggers que invalidan construcción típica (PGA ≥ 0.40g, Clase E/F, suelos problemáticos, irregularidad).</li>
-    </ul>
-
-    <p><strong>3. Estructuras geotécnicas</strong> (REP-21 Cap. 6 + Manual)</p>
-    <ul>
-      <li>Análisis pseudoestático.</li>
-      <li>kh: 6 métodos del Cuadro 14 del Manual + factor 2/3 del REP §6.5.</li>
-      <li>kv: envolvente obligatorio de 3 escenarios (kv=0, +kv, −kv) por Cuadro 14 Nota 1.</li>
-      <li>Umbral para asumir kv=0: rígido ≤ 0.10, flexible ≤ 0.05.</li>
-    </ul>
-
-    <p><strong>Mejoras v2.0:</strong></p>
-    <ul>
-      <li>Override de Ss, S1, PGA y T (estudio específico de sitio).</li>
-      <li>Cálculo automático de Ta·Cu para todos los sistemas.</li>
-      <li>Validación Tabla 12.2-1 (sistemas prohibidos + límites de altura).</li>
-      <li>Advertencias de análisis específico de sitio cuando Fa/Fv se extrapolan.</li>
-      <li>kh con 6 métodos del Cuadro 14, envolvente kv automático.</li>
-      <li>Glosario embebido con referencias normativas en cada parámetro.</li>
-      <li>Memoria de cálculo paso a paso en cada resultado.</li>
-    </ul>
+  // ADVERTENCIAS
+  if (resultado.advertencias && resultado.advertencias.length > 0) {
+    // Convertir advertencias a strings primero
+    const advStrings = resultado.advertencias.map(adv => {
+      if (typeof adv === 'string') return adv;
+      const msg = adv.msg || '';
+      const ref = adv.ref ? ` [${adv.ref}]` : '';
+      const req = adv.requerimiento ? ` — Acción requerida: ${adv.requerimiento}` : '';
+      return msg + req + ref;
+    });
     
-    <div class="lmm-tag">Herramienta generada por LMM Ingeniería</div>
-  </div>
-</div>
+    // Pre-calcular altura real considerando wrap
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    let lineCount = 0;
+    const advLines = advStrings.map(adv => {
+      const lines = doc.splitTextToSize('• ' + adv, CONTENT_W - 6);
+      lineCount += lines.length;
+      return lines;
+    });
+    const altura = 8 + 5 * lineCount + 3;
+    
+    y = checkPageBreak(doc, y, PAGE_H, altura + 5, MARGIN);
+    y += 3;
+    
+    doc.setFillColor(255, 251, 235);
+    doc.rect(MARGIN, y, CONTENT_W, altura, 'F');
+    doc.setTextColor(146, 64, 14);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('AVISOS:', MARGIN + 3, y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    let yAdv = y + 10;
+    advLines.forEach(lines => {
+      doc.text(lines, MARGIN + 3, yAdv);
+      yAdv += 5 * lines.length;
+    });
+    y = yAdv + 3;
+  }
 
-<!-- MODAL Glosario -->
-<div class="modal" id="modal-glosario" onclick="hideModal('modal-glosario')">
-  <div class="modal-content" onclick="event.stopPropagation()">
-    <button class="modal-close" onclick="hideModal('modal-glosario')">×</button>
-    <h2>Glosario de parámetros</h2>
-    <div id="glosario-content"></div>
-    <div class="lmm-tag">SismoPanamá v2.0 — Glosario normativo embebido</div>
-  </div>
-</div>
+  // REFERENCIAS
+  y = checkPageBreak(doc, y, PAGE_H, 50, MARGIN);
+  y = seccionTitulo(doc, 'Referencias Normativas', y, MARGIN, ACCENT);
+  doc.setTextColor(...TEXT);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  const refs = [
+    '• REP-2021 — Reglamento para el Diseño Estructural Panameño.',
+    '  Resolución JTIA-020-2022, Gaceta Oficial Digital N° 29594-A (05/08/2022).',
+    '• ASCE/SEI 7-05 — Minimum Design Loads for Buildings and Other Structures.',
+    '• Mapas de aceleración: REP-21 Anexo 3.',
+  ];
+  refs.forEach(ref => {
+    const lines = doc.splitTextToSize(ref, CONTENT_W);
+    doc.text(lines, MARGIN, y);
+    y += 4 * lines.length;
+  });
 
-<!-- MODAL Detalle parámetro (al hacer click en ⓘ) -->
-<div class="modal" id="modal-detalle" onclick="hideModal('modal-detalle')">
-  <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 480px;">
-    <button class="modal-close" onclick="hideModal('modal-detalle')">×</button>
-    <div id="detalle-content"></div>
-  </div>
-</div>
+  // DISCLAIMER
+  y += 4;
+  y = checkPageBreak(doc, y, PAGE_H, 35, MARGIN);
+  doc.setFillColor(254, 226, 226);
+  doc.rect(MARGIN, y, CONTENT_W, 28, 'F');
+  doc.setTextColor(127, 29, 29);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.text('AVISO DE RESPONSABILIDAD', MARGIN + 3, y + 5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  const disclaimer = 'Esta es una herramienta generada por LMM Ingeniería para uso de referencia. Los valores se derivan de los mapas oficiales del REP-2021. El usuario es responsable de verificar los resultados contra el reglamento oficial. Esta herramienta no sustituye el juicio profesional de un ingeniero estructural idóneo. La responsabilidad del diseño sísmico recae enteramente sobre el profesional firmante.';
+  const dlines = doc.splitTextToSize(disclaimer, CONTENT_W - 6);
+  doc.text(dlines, MARGIN + 3, y + 10);
 
-<div class="modal" id="modal-acerca" onclick="hideModal('modal-acerca')">
-  <div class="modal-content" onclick="event.stopPropagation()">
-    <button class="modal-close" onclick="hideModal('modal-acerca')">×</button>
-    <h2>Acerca de SismoPanamá</h2>
-    <p>SismoPanamá es una herramienta gratuita de consulta y cálculo sísmico basada en el Reglamento Estructural Panameño REP-2021.</p>
-    <p><strong>Desarrollada y generada por:</strong> LMM Ingeniería</p>
-    <p><strong>Licencia:</strong> MIT (código abierto)</p>
-    <p><strong>Marco legal:</strong> Resolución JTIA-020-2022, Gaceta Oficial Digital N° 29594-A (5 agosto 2022).</p>
-    <p><strong>Versión:</strong> <span id="acerca-version">v2.0</span></p>
-    <p><strong>Última actualización:</strong> <span id="acerca-fecha">—</span></p>
-    <p><strong>Aviso de responsabilidad:</strong> Esta herramienta es de referencia. El uso técnico es responsabilidad del ingeniero usuario. SismoPanamá ni LMM Ingeniería se hacen responsables de errores de diseño derivados del uso de esta herramienta.</p>
-    <div class="lmm-tag">© LMM Ingeniería — Herramienta libre para uso profesional</div>
-  </div>
-</div>
+  // FOOTER en todas las páginas
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setDrawColor(...ACCENT);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, PAGE_H - 13, PAGE_W - MARGIN, PAGE_H - 13);
+    doc.setTextColor(...PRIMARY);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('Aplicación desarrollada por LMM Ingeniería', MARGIN, PAGE_H - 8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...GRAY);
+    doc.text(`Página ${p} de ${totalPages}`, PAGE_W - MARGIN, PAGE_H - 8, { align: 'right' });
+    doc.setFontSize(6);
+    doc.text('sismopanama · lmmtool.github.io/sismo', PAGE_W / 2, PAGE_H - 8, { align: 'center' });
+  }
 
-<div class="modal" id="modal-changelog" onclick="hideModal('modal-changelog')">
-  <div class="modal-content" onclick="event.stopPropagation()">
-    <button class="modal-close" onclick="hideModal('modal-changelog')">×</button>
-    <h2>Historial de versiones</h2>
-    <div id="changelog-content"></div>
-  </div>
-</div>
+  doc.setProperties({
+    title: `Reporte Sísmico REP-21 - ${hash}`,
+    subject: 'Parámetros Sísmicos de Diseño según REP-21',
+    author: 'LMM Ingeniería',
+    keywords: 'REP-21, sísmico, Panamá',
+    creator: 'SismoPanamá - LMM Ingeniería'
+  });
 
-<script src="lib/raster.js"></script>
-<script src="lib/seismic-calc.js"></script>
-<script src="lib/pdf-gen.js"></script>
-<script src="app.js"></script>
+  return doc;
+}
 
-</body>
-</html>
+// ============================================================
+// REPORTE EDIFICIO
+// ============================================================
+async function reporteEdificio(doc, r, chart, y, MARGIN, CW, PH, ACCENT, PRIMARY, HIGHLIGHT, SOFT, TEXT, GRAY) {
+  y = seccionTitulo(doc, '4. Parámetros de Entrada', y, MARGIN, ACCENT);
+  const tipoLabel = r.input.tipoEstructura === 'infra' 
+    ? 'Infraestructura Grupo 2 (1000 años)' : 'Edificio (Grupo 1, 2500 años)';
+  y = renderTabla(doc, [
+    ['Tipo', tipoLabel],
+    ['Clase de sitio', r.input.claseSitio],
+    ['Categoría de riesgo', `${r.input.riesgo} (Ie = ${r.Ie})`],
+    ['Sistema estructural', r.sistema.nombre],
+    ['Altura hn', `${r.input.hn ? r.input.hn.toFixed(2) : '—'} m`],
+    ['Período T usado', `${r.T.toFixed(3)} s`],
+    ['Ta (Ec. 12.8-7)', `${r.periodoInfo ? r.periodoInfo.Ta.toFixed(3) : '—'} s`],
+    ['Cu (Tabla 12.8-1)', `${r.periodoInfo ? r.periodoInfo.Cu : '—'}`],
+  ], y, MARGIN, CW, SOFT, TEXT, GRAY);
+
+  y = seccionTitulo(doc, '5. Factores de Sitio (ASCE 7-05)', y, MARGIN, ACCENT);
+  y = renderTabla(doc, [
+    ['Fa', r.Fa.toFixed(3)],
+    ['Fv', r.Fv.toFixed(3)],
+  ], y, MARGIN, CW, SOFT, TEXT, GRAY);
+
+  y = seccionTitulo(doc, '6. Aceleraciones Ajustadas', y, MARGIN, ACCENT);
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(...GRAY);
+  doc.text('SMS = Fa·Ss   SM1 = Fv·S₁   SDS = (2/3)·SMS   SD1 = (2/3)·SM1', MARGIN, y);
+  y += 5;
+  y = renderTabla(doc, [
+    ['SMS', `${r.SMS.toFixed(3)} g`],
+    ['SM1', `${r.SM1.toFixed(3)} g`],
+    ['SDS', `${r.SDS.toFixed(3)} g`],
+    ['SD1', `${r.SD1.toFixed(3)} g`],
+  ], y, MARGIN, CW, SOFT, TEXT, GRAY);
+
+  y = checkPageBreak(doc, y, PH, 50, MARGIN);
+  y = seccionTitulo(doc, '7. Categoría de Diseño Sísmico', y, MARGIN, ACCENT);
+  doc.setFillColor(...ACCENT);
+  doc.rect(MARGIN, y, CW, 12, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
+  doc.text(`CDS = ${r.CDS}`, MARGIN + 5, y + 8);
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+  doc.text('Tablas 11.6-1, 11.6-2 ASCE 7-05', PAGE_W_LETTER - MARGIN - 5, y + 8, { align: 'right' });
+  y += 16;
+
+  y = seccionTitulo(doc, '8. Sistema Estructural', y, MARGIN, ACCENT);
+  y = renderTabla(doc, [
+    ['R', r.R.toFixed(2)],
+    ['Ω₀', r.omega.toFixed(2)],
+    ['Cd', r.Cd.toFixed(2)],
+  ], y, MARGIN, CW, SOFT, TEXT, GRAY);
+
+  if (r.sistema.isCustom) {
+    doc.setFillColor(255, 251, 235);
+    doc.rect(MARGIN, y, CW, 12, 'F');
+    doc.setTextColor(146, 64, 14);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+    doc.text('ADVERTENCIA:', MARGIN + 3, y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.text('R, Ω₀, Cd ingresados manualmente. Verificar contra Tabla 12.2-1 ASCE 7-05.', MARGIN + 3, y + 9);
+    y += 16;
+  }
+
+  y = checkPageBreak(doc, y, PH, 50, MARGIN);
+  y = seccionTitulo(doc, '9. Coeficiente Sísmico Cs', y, MARGIN, ACCENT);
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(...GRAY);
+  doc.text('Cs = SDS/(R/Ie)   Mínimo REP-21 sec. 5.2.1: Cs ≥ 0.044·SDS·Ie ≥ 0.01', MARGIN, y);
+  y += 5;
+  y = renderTabla(doc, [
+    ['Cs básico', r.Cs_basico.toFixed(4)],
+    ['Cs máximo', r.Cs_max.toFixed(4)],
+    ['Cs mínimo', r.Cs_min.toFixed(4)],
+  ], y, MARGIN, CW, SOFT, TEXT, GRAY);
+  
+  doc.setFillColor(...PRIMARY);
+  doc.rect(MARGIN, y, CW, 16, 'F');
+  doc.setTextColor(...HIGHLIGHT);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+  doc.text('COEFICIENTE SÍSMICO DE DISEÑO', MARGIN + 5, y + 7);
+  doc.setFontSize(20); doc.setTextColor(255, 255, 255);
+  doc.text(`Cs = ${r.Cs.toFixed(4)}`, PAGE_W_LETTER - MARGIN - 5, y + 10, { align: 'right' });
+  y += 20;
+
+  if (chart) {
+    y = checkPageBreak(doc, y, PH, 100, MARGIN);
+    y = seccionTitulo(doc, '10. Espectro de Diseño', y, MARGIN, ACCENT);
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(...GRAY);
+    doc.text(`T₀ = ${r.T0.toFixed(3)} s   Ts = ${r.Ts.toFixed(3)} s   TL = ${r.TL.toFixed(1)} s`, MARGIN, y);
+    y += 5;
+    const chartImg = chart.toBase64Image();
+    doc.addImage(chartImg, 'PNG', MARGIN, y, CW, 80);
+    y += 84;
+  }
+  return y;
+}
+
+// ============================================================
+// REPORTE VIVIENDA
+// ============================================================
+function reporteVivienda(doc, r, y, MARGIN, CW, PH, ACCENT, PRIMARY, HIGHLIGHT, SOFT, TEXT, GRAY) {
+  y = seccionTitulo(doc, '4. Parámetros del Sitio', y, MARGIN, ACCENT);
+  y = renderTabla(doc, [
+    ['Clase de sitio', r.input.claseSitio],
+    ['PGA del sitio', `${r.PGA.toFixed(3)} g`],
+    ['Zona de sismicidad', r.zonaPGA],
+  ], y, MARGIN, CW, SOFT, TEXT, GRAY);
+
+  y = seccionTitulo(doc, '5. Densidad Mínima de Paredes (d)', y, MARGIN, ACCENT);
+  
+  doc.setFillColor(...PRIMARY);
+  doc.rect(MARGIN, y, CW, 16, 'F');
+  doc.setTextColor(...HIGHLIGHT);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text('DENSIDAD MÍNIMA REQUERIDA', MARGIN + 5, y + 7);
+  doc.setFontSize(20); doc.setTextColor(255, 255, 255);
+  doc.text(`d = ${r.densidadMinima.toFixed(1)} %`, PAGE_W_LETTER - MARGIN - 5, y + 10, { align: 'right' });
+  y += 20;
+
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(...GRAY);
+  doc.text('REP-21 Cap. 7.4 - Tabla densidad mínima de paredes según PGA del sitio.', MARGIN, y);
+  y += 8;
+
+  y = seccionTitulo(doc, '6. Clasificación de la Construcción', y, MARGIN, ACCENT);
+  if (r.calificaTipica) {
+    doc.setFillColor(220, 252, 231);
+    doc.rect(MARGIN, y, CW, 14, 'F');
+    doc.setTextColor(6, 95, 70);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text('CALIFICA COMO CONSTRUCCIÓN TÍPICA', MARGIN + 5, y + 8);
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    doc.text('REP-21 sec. 7.3-7.4', PAGE_W_LETTER - MARGIN - 5, y + 8, { align: 'right' });
+    y += 18;
+  } else {
+    const altura = 18 + 5 * r.triggersNoTipica.length;
+    doc.setFillColor(255, 251, 235);
+    doc.rect(MARGIN, y, CW, altura, 'F');
+    doc.setTextColor(146, 64, 14);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text('NO CALIFICA COMO CONSTRUCCIÓN TÍPICA', MARGIN + 5, y + 6);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+    doc.text('Triggers detectados:', MARGIN + 5, y + 13);
+    doc.setFont('helvetica', 'normal');
+    let yT = y + 18;
+    r.triggersNoTipica.forEach(t => {
+      doc.text(`• ${t}`, MARGIN + 8, yT);
+      yT += 5;
+    });
+    y = yT + 4;
+  }
+
+  y = seccionTitulo(doc, '7. Parámetros de Mampostería Confinada', y, MARGIN, ACCENT);
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(...GRAY);
+  doc.text('REP-21 sec. 7.4.2.3 (para diseño completo si no califica como típica)', MARGIN, y);
+  y += 5;
+  y = renderTabla(doc, [
+    ['R', r.R.toFixed(2)],
+    ['Ω₀', r.omega.toFixed(2)],
+    ['Cd', r.Cd.toFixed(2)],
+  ], y, MARGIN, CW, SOFT, TEXT, GRAY);
+
+  return y;
+}
+
+// ============================================================
+// REPORTE GEOTECNIA
+// ============================================================
+function reporteGeotecnia(doc, r, y, MARGIN, CW, PH, ACCENT, PRIMARY, HIGHLIGHT, SOFT, TEXT, GRAY) {
+  y = seccionTitulo(doc, '4. Parámetros Geotécnicos', y, MARGIN, ACCENT);
+  const tipoNombre = (r.tipoGeotecnicoInfo && r.tipoGeotecnicoInfo.nombre) || r.tipoGeotecnico || '—';
+  y = renderTabla(doc, [
+    ['Tipo de estructura', tipoNombre],
+    ['Categoría', r.tipoMuro === 'rigido' ? 'Rígido' : 'Flexible'],
+    ['Clase de sitio', r.input.claseSitio],
+    ['Fa (factor de sitio)', r.Fa.toFixed(3)],
+  ], y, MARGIN, CW, SOFT, TEXT, GRAY);
+
+  y = seccionTitulo(doc, '5. Aceleraciones', y, MARGIN, ACCENT);
+  y = renderTabla(doc, [
+    ['PGA del mapa (Clase B)', `${r.PGA_mapa.toFixed(3)} g`],
+    ['PGA usado', `${r.PGA_usado.toFixed(3)} g`],
+    ['PGA ajustado al sitio (× Fa)', `${r.PGA_sitio.toFixed(3)} g`],
+  ], y, MARGIN, CW, SOFT, TEXT, GRAY);
+
+  y = checkPageBreak(doc, y, PH, 60, MARGIN);
+  y = seccionTitulo(doc, '6. Coeficiente kh (' + (r.khInfo ? 'Método ' + r.khInfo.metodo : '—') + ')', y, MARGIN, ACCENT);
+  if (r.khInfo) {
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(...GRAY);
+    doc.text(r.khInfo.nombreMetodo, MARGIN, y); y += 4;
+    doc.text(`Fórmula: ${r.khInfo.formula}`, MARGIN, y); y += 4;
+    doc.text(r.khInfo.detalle, MARGIN, y); y += 4;
+    doc.text(`Ref: ${r.khInfo.ref}`, MARGIN, y); y += 6;
+  }
+  
+  doc.setFillColor(...PRIMARY);
+  doc.rect(MARGIN, y, CW, 16, 'F');
+  doc.setTextColor(...HIGHLIGHT);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+  doc.text('COEFICIENTE HORIZONTAL', MARGIN + 5, y + 7);
+  doc.setFontSize(20); doc.setTextColor(255, 255, 255);
+  doc.text(`kh = ${r.kh.toFixed(4)}`, PAGE_W_LETTER - MARGIN - 5, y + 10, { align: 'right' });
+  y += 20;
+
+  y = checkPageBreak(doc, y, PH, 50, MARGIN);
+  y = seccionTitulo(doc, '7. Coeficiente kv — Envolvente (Cuadro 14 Nota 1)', y, MARGIN, ACCENT);
+  if (r.kvInfo) {
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(...GRAY);
+    doc.text(`Magnitud: kv = ±${r.kvInfo.ratio}·kh = ±${r.kvInfo.kvMagnitud.toFixed(4)}`, MARGIN, y); y += 4;
+    doc.text(r.kvInfo.advertencia, MARGIN, y, { maxWidth: CW }); y += 8;
+    
+    const filas = r.kvInfo.escenarios.map(e => [
+      `${e.id}) ${e.nombre}`,
+      `kv = ${e.kv.toFixed(4)}, ψ = ${e.psi_deg.toFixed(2)}°${e.gobierna ? ' ← GOBIERNA' : ''}`
+    ]);
+    y = renderTabla(doc, filas, y, MARGIN, CW, SOFT, TEXT, GRAY);
+  }
+  
+  y = seccionTitulo(doc, '8. Ángulo de Inercia Sísmico (ψ) — Caso gobernante', y, MARGIN, ACCENT);
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(...GRAY);
+  doc.text('Para análisis Mononobe-Okabe: tan(ψ) = kh / (1 - kv)', MARGIN, y);
+  y += 5;
+  y = renderTabla(doc, [
+    ['ψ (radianes)', r.psi_rad.toFixed(4)],
+    ['ψ (grados)', `${r.psi_deg.toFixed(2)}°`],
+    ['kv usado', r.kv_gobernante.toFixed(4)],
+  ], y, MARGIN, CW, SOFT, TEXT, GRAY);
+
+  return y;
+}
+
+// Helpers
+const PAGE_W_LETTER = 215.9;
+
+function checkPageBreak(doc, y, PH, needed, MARGIN) {
+  if (y + needed > PH - 20) {
+    doc.addPage();
+    return MARGIN;
+  }
+  return y;
+}
+
+function seccionTitulo(doc, texto, y, x, color) {
+  doc.setFillColor(...color);
+  doc.rect(x, y, 3, 6, 'F');
+  doc.setTextColor(30, 58, 95);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text(texto, x + 5, y + 4.5);
+  return y + 9;
+}
+
+function renderTabla(doc, rows, y, x, width, softColor, textColor, grayColor) {
+  const rowH = 5.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  rows.forEach((row, i) => {
+    if (i % 2 === 0) {
+      doc.setFillColor(...softColor);
+      doc.rect(x, y, width, rowH, 'F');
+    }
+    doc.setTextColor(...grayColor);
+    doc.text(row[0], x + 2, y + 4);
+    doc.setTextColor(...textColor);
+    doc.setFont('helvetica', 'bold');
+    doc.text(row[1], x + width - 2, y + 4, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    y += rowH;
+  });
+  return y + 3;
+}
+
+function generarHash(coord, resultado) {
+  const cs_val = resultado.Cs || resultado.kh || resultado.densidadMinima || 0;
+  const str = `${coord.lat.toFixed(4)}${coord.lng.toFixed(4)}${cs_val.toFixed(4)}${Date.now()}`;
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const chr = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0;
+  }
+  const hexHash = Math.abs(hash).toString(16).toUpperCase().padStart(6, '0').substring(0, 6);
+  const dateCode = new Date().toISOString().substring(0, 10).replace(/-/g, '');
+  return `SP-${dateCode}-${hexHash}`;
+}
+
+window.PDFGen = { generarReportePDF };
