@@ -67,6 +67,7 @@ async function init() {
 
   try {
     manager = await new RasterManager().loadAll(manifest.active_version);
+    calibrarRangos();  // p2/p98 dinámicos por capa
     document.getElementById('results-pane').innerHTML =
       '<div class="empty-state">Hacé clic en el mapa o ingresá una coordenada.</div>';
     renderContours();
@@ -140,42 +141,92 @@ function initMap() {
 }
 
 // ============================================================
-// HEATMAP (capa base estilo Anexo 3 oficial)
+// HEATMAP — Paletas distintas por capa + calibración p2/p98
 // ============================================================
 let heatmapLayer = null;
 
-// Paleta estilo Anexo 3: azul claro → cyan → verde → amarillo → naranja → rojo
+// Paletas por capa: [posición 0-1, [R, G, B]]
+const PALETAS = {
+  // PGA: cálida pura (amarillo → naranja → rojo oscuro)
+  pga: [
+    [0.00, [255, 247, 188]],
+    [0.25, [254, 217, 118]],
+    [0.50, [253, 141,  60]],
+    [0.75, [227,  74,  51]],
+    [1.00, [127,   0,   0]]
+  ],
+  // Ss: Viridis (violeta → azul → verde → amarillo)
+  ss: [
+    [0.00, [ 68,   1,  84]],
+    [0.25, [ 59,  82, 139]],
+    [0.50, [ 33, 144, 141]],
+    [0.75, [ 94, 201,  98]],
+    [1.00, [253, 231,  37]]
+  ],
+  // S1: fría (azul claro → cyan → verde → azul medio → violeta)
+  s1: [
+    [0.00, [237, 248, 251]],
+    [0.25, [178, 226, 226]],
+    [0.50, [102, 194, 164]],
+    [0.75, [ 44, 127, 184]],
+    [1.00, [ 37,  52, 148]]
+  ]
+};
+
+// Rangos calculados dinámicamente desde el raster (p2 y p98)
+const RANGOS = {
+  pga: { min: 0.27, max: 0.52 },
+  ss:  { min: 0.62, max: 1.25 },
+  s1:  { min: 0.24, max: 0.51 }
+};
+
+// Calcula p2 y p98 del raster (descarta ceros = fuera de país)
+function calcularPercentiles(raster) {
+  const data = raster.data;
+  const scale = raster.meta.scale_factor;
+  const vals = [];
+  for (let i = 0; i < data.length; i++) {
+    if (data[i] > 0) vals.push(data[i] / scale);
+  }
+  if (vals.length === 0) return { min: 0, max: 1 };
+  vals.sort((a, b) => a - b);
+  const p2  = vals[Math.floor(vals.length * 0.02)];
+  const p98 = vals[Math.floor(vals.length * 0.98)];
+  return { min: p2, max: p98 };
+}
+
+// Calibrar rangos dinámicos al cargar
+function calibrarRangos() {
+  if (!manager || !manager.loaded) return;
+  ['pga', 'ss', 's1'].forEach(layer => {
+    if (manager.rasters[layer]) {
+      RANGOS[layer] = calcularPercentiles(manager.rasters[layer]);
+    }
+  });
+}
+
+// Interpolación de color dentro de la paleta de la capa
 function colorFromValue(value, layer) {
-  // Rangos por capa (calibrados con Anexo 3)
-  let min, max;
-  if (layer === 'ss')       { min = 0.4; max = 2.0; }
-  else if (layer === 's1')  { min = 0.2; max = 0.7; }
-  else                      { min = 0.2; max = 0.7; } // pga
+  const rango = RANGOS[layer];
+  if (!rango) return 'rgb(200,200,200)';
   
-  const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
-  
-  // Stops: [t, R, G, B]
-  const stops = [
-    [0.00, 191, 219, 254],  // azul claro
-    [0.20, 186, 230, 253],  // cyan
-    [0.40, 253, 230, 138],  // amarillo
-    [0.55, 251, 191, 36],   // amarillo-naranja
-    [0.70, 234, 88, 12],    // naranja
-    [0.85, 220, 38, 38],    // rojo
-    [1.00, 127, 29, 29]     // rojo oscuro
-  ];
+  const t = Math.max(0, Math.min(1, (value - rango.min) / (rango.max - rango.min)));
+  const stops = PALETAS[layer] || PALETAS.pga;
   
   for (let i = 0; i < stops.length - 1; i++) {
     if (t >= stops[i][0] && t <= stops[i + 1][0]) {
       const span = stops[i + 1][0] - stops[i][0];
       const localT = span > 0 ? (t - stops[i][0]) / span : 0;
-      const r = Math.round(stops[i][1] + localT * (stops[i + 1][1] - stops[i][1]));
-      const g = Math.round(stops[i][2] + localT * (stops[i + 1][2] - stops[i][2]));
-      const b = Math.round(stops[i][3] + localT * (stops[i + 1][3] - stops[i][3]));
+      const c0 = stops[i][1];
+      const c1 = stops[i + 1][1];
+      const r = Math.round(c0[0] + localT * (c1[0] - c0[0]));
+      const g = Math.round(c0[1] + localT * (c1[1] - c0[1]));
+      const b = Math.round(c0[2] + localT * (c1[2] - c0[2]));
       return `rgb(${r},${g},${b})`;
     }
   }
-  return 'rgb(127,29,29)';
+  const last = stops[stops.length - 1][1];
+  return `rgb(${last[0]},${last[1]},${last[2]})`;
 }
 
 function renderHeatmap() {
@@ -189,7 +240,6 @@ function renderHeatmap() {
   const data = raster.data;
   const scale = meta.scale_factor;
   
-  // Crear canvas con resolución del raster
   const canvas = document.createElement('canvas');
   canvas.width = meta.width;
   canvas.height = meta.height;
@@ -204,7 +254,6 @@ function renderHeatmap() {
       const pixIdx = idx * 4;
       
       if (rawVal === 0) {
-        // Fuera de Panamá: transparente
         pixels[pixIdx] = 0;
         pixels[pixIdx + 1] = 0;
         pixels[pixIdx + 2] = 0;
@@ -216,24 +265,22 @@ function renderHeatmap() {
         pixels[pixIdx] = parseInt(m[0]);
         pixels[pixIdx + 1] = parseInt(m[1]);
         pixels[pixIdx + 2] = parseInt(m[2]);
-        pixels[pixIdx + 3] = 170;  // opacidad ~67%
+        pixels[pixIdx + 3] = 200;  // opacidad ~78%
       }
     }
   }
   ctx.putImageData(imageData, 0, 0);
   
-  // Bounds del raster
   const bounds = [
     [meta.origin_lat - meta.height * meta.res, meta.origin_lng],
     [meta.origin_lat, meta.origin_lng + meta.width * meta.res]
   ];
   
   heatmapLayer = L.imageOverlay(canvas.toDataURL(), bounds, {
-    opacity: 0.7,
+    opacity: 0.78,
     interactive: false
   }).addTo(map);
   
-  // Heatmap debajo de curvas
   heatmapLayer.bringToBack();
 }
 
@@ -242,92 +289,19 @@ function renderContours() {
   contourLayer.clearLayers();
   labelLayer.clearLayers();
 
-  // 1. Heatmap base
+  // Solo heatmap — sin curvas
   renderHeatmap();
-
-  const data = manager.getContours(currentLayer);
-  if (!data) {
-    updateLegend();
-    return;
-  }
-
-  // 2. Solo curvas MAYORES (intervalo 0.2g) — evita espagueti
-  const drawCurves = (levels, isOficial) => {
-    if (!levels) return;
-    levels.forEach(level => {
-      const value = level.value;
-      // Solo mayores: múltiplos de 0.2 con tolerancia
-      const isMajor = Math.abs((value * 10) % 2) < 0.05 || Math.abs((value * 10) % 2 - 2) < 0.05;
-      if (!isOficial && !isMajor) return;  // nacional: solo mayores
-      
-      const color = '#1E3A5F';
-      const width = isMajor ? (isOficial ? 1.5 : 1.2) : 0.7;
-      const opacity = isOficial ? 0.85 : 0.55;
-      
-      level.paths.forEach(path => {
-        const latlngs = path.map(p => [p[1], p[0]]);
-        L.polyline(latlngs, {
-          color: color,
-          weight: width,
-          opacity: opacity,
-          smoothFactor: 1.5,
-          lineCap: 'round',
-          lineJoin: 'round'
-        }).addTo(contourLayer);
-      });
-    });
-  };
-  
-  drawCurves(data.nacional, false);
-  drawCurves(data.oficial, true);
-
   updateLegend();
-  updateLabels();
 }
 
 function updateLabels() {
-  if (!manager || !manager.loaded) return;
+  // No-op: ya no hay curvas que etiquetar
+  if (!labelLayer) return;
   labelLayer.clearLayers();
-  
-  const zoom = map.getZoom();
-  if (zoom < 9) return;
-  
-  const data = manager.getContours(currentLayer);
-  if (!data) return;
-  
-  const bounds = map.getBounds();
-  
-  const addLabelsFor = (levels) => {
-    if (!levels) return;
-    levels.forEach(level => {
-      const value = level.value;
-      const isMajor = Math.abs((value * 10) % 2) < 0.05 || Math.abs((value * 10) % 2 - 2) < 0.05;
-      if (!isMajor) return;
-      
-      level.paths.forEach(path => {
-        if (path.length < 4) return;
-        const midIdx = Math.floor(path.length / 2);
-        const pt = path[midIdx];
-        const latlng = [pt[1], pt[0]];
-        if (!bounds.contains(latlng)) return;
-        
-        const label = L.divIcon({
-          className: 'contour-label',
-          html: `<span>${value.toFixed(2)}</span>`,
-          iconSize: [36, 14],
-          iconAnchor: [18, 7]
-        });
-        L.marker(latlng, { icon: label, interactive: false }).addTo(labelLayer);
-      });
-    });
-  };
-  
-  addLabelsFor(data.oficial);
-  addLabelsFor(data.nacional);
 }
 
 function isMajorContour(value, layer) {
-  return Math.abs((value * 10) % 2) < 0.05 || Math.abs((value * 10) % 2 - 2) < 0.05;
+  return false;
 }
 
 function colorForContour(layer, value, isMajor) {
@@ -335,8 +309,7 @@ function colorForContour(layer, value, isMajor) {
 }
 
 function widthForContour(value, isOficial, isMajor) {
-  if (isOficial) return isMajor ? 1.5 : 0.7;
-  return isMajor ? 1.2 : 0.5;
+  return 1.0;
 }
 
 function updateLegend() {
@@ -347,26 +320,36 @@ function updateLegend() {
   };
   document.getElementById('legend-period').textContent = labels[currentLayer];
   
-  // Leyenda con escala de color del heatmap
   const scale = document.getElementById('legend-scale');
-  let min, max;
-  if (currentLayer === 'ss')       { min = 0.4; max = 2.0; }
-  else if (currentLayer === 's1')  { min = 0.2; max = 0.7; }
-  else                              { min = 0.2; max = 0.7; }
+  const rango = RANGOS[currentLayer] || { min: 0, max: 1 };
+  const min = rango.min;
+  const max = rango.max;
+  
+  // Gradiente continuo con muchos stops (50 muestras = transición suave)
+  const stops = [];
+  for (let i = 0; i <= 50; i++) {
+    const t = i / 50;
+    const v = min + t * (max - min);
+    stops.push(`${colorFromValue(v, currentLayer)} ${(t*100).toFixed(0)}%`);
+  }
+  const gradiente = `linear-gradient(to right, ${stops.join(', ')})`;
+  
+  // 7 ticks numéricos repartidos
+  const ticks = [];
+  for (let i = 0; i < 7; i++) {
+    const t = i / 6;
+    const v = min + t * (max - min);
+    ticks.push(v);
+  }
   
   scale.innerHTML = `
     <div class="heatmap-legend">
-      <div class="heatmap-gradient" style="background: linear-gradient(to right, ${colorFromValue(min, currentLayer)}, ${colorFromValue((min+max)/2, currentLayer)}, ${colorFromValue(max, currentLayer)});"></div>
+      <div class="heatmap-gradient" style="background: ${gradiente};"></div>
       <div class="heatmap-ticks">
-        <span>${min.toFixed(1)}</span>
-        <span>${((min+max)/2).toFixed(2)}</span>
-        <span>${max.toFixed(1)}+</span>
+        ${ticks.map((v, i) => `<span>${v.toFixed(2)}${i === ticks.length - 1 ? '+' : ''}</span>`).join('')}
       </div>
-      <div class="heatmap-unit">g</div>
-    </div>
-    <div class="legend-item" style="margin-top: 6px;">
-      <div class="legend-line" style="background:#1E3A5F; height: 1.5px;"></div>
-      <span>Curva mayor (cada 0.2 g)</span>
+      <div class="heatmap-unit">Sa (g) — ${labels[currentLayer]}</div>
+      <div class="heatmap-info">Calibrado por percentiles p2–p98 del raster</div>
     </div>
   `;
 }

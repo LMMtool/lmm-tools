@@ -428,24 +428,25 @@ input:hover:not(:focus), select:hover:not(:focus) {
   right: 16px;
   background: white;
   border: 1px solid var(--border);
-  padding: 12px 14px;
+  padding: 14px 16px;
   border-radius: 6px;
   z-index: 1000;
   font-family: 'IBM Plex Mono', monospace;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  max-width: 200px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  min-width: 360px;
+  max-width: 420px;
 }
 .legend-title {
-  font-size: 9px;
-  color: var(--text-dim);
+  font-size: 10px;
+  color: var(--text);
   letter-spacing: 1.5px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   font-weight: 700;
 }
 .legend-scale {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 .legend-item {
   display: flex;
@@ -601,7 +602,9 @@ footer span { color: rgba(255,255,255,0.7); margin: 0 8px; }
     border-bottom: 1px solid var(--border-light);
   }
   .header-right .subtitle { display: none; }
-  .legend { bottom: 42px; right: 12px; padding: 8px 10px; max-width: 160px; }
+  .legend { bottom: 42px; right: 12px; padding: 10px 12px; min-width: 250px; max-width: 280px; }
+  .heatmap-gradient { height: 18px; }
+  .heatmap-ticks { font-size: 9px; }
 }
 
 .loader {
@@ -986,29 +989,60 @@ footer span { color: rgba(255,255,255,0.7); margin: 0 8px; }
   margin: 0 !important;
 }
 
-/* Heatmap leyenda */
+/* Heatmap leyenda — grande */
 .heatmap-legend {
-  margin-top: 4px;
+  margin-top: 6px;
 }
 .heatmap-gradient {
-  height: 12px;
-  border-radius: 3px;
-  border: 1px solid #d4d4d4;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid #c4c4c4;
 }
 .heatmap-ticks {
   display: flex;
   justify-content: space-between;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
-  color: var(--text-dim);
-  margin-top: 2px;
+  font-size: 10px;
+  color: var(--text);
+  margin-top: 4px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
+.heatmap-ticks span {
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+.heatmap-ticks span::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 1px;
+  height: 4px;
+  background: #8b8b8b;
+  transform: translateX(-50%);
+}
+.heatmap-ticks span:first-child { text-align: left; }
+.heatmap-ticks span:first-child::before { left: 0; transform: none; }
+.heatmap-ticks span:last-child { text-align: right; }
+.heatmap-ticks span:last-child::before { left: auto; right: 0; transform: none; }
+
 .heatmap-unit {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text);
+  text-align: center;
+  margin-top: 6px;
+  font-weight: 600;
+}
+.heatmap-info {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 9px;
   color: var(--text-dim);
-  text-align: right;
-  margin-top: -10px;
+  text-align: center;
+  margin-top: 2px;
+  font-style: italic;
 }
 
 /* Asegurar que las etiquetas de contorno se vean sobre el heatmap */
