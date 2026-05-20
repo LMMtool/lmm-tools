@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Visor REP-21 y calculadora sísmica para Panamá v2.0. Herramienta generada por LMM Ingeniería.">
+<meta name="author" content="LMM Ingeniería">
+<title>SismoPanamá v2.0 — REP-21 · LMM Ingeniería</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="style.css"/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">SISMO<span>·</span>PANAMA</div>
+    <div class="version-badge" id="version-badge">v2.0</div>
+  </div>
+  <div class="header-right">
+    <span class="subtitle">REP-21 · LMM Ingeniería</span>
+    <a href="#" onclick="showModal('modal-metodologia'); return false;">Metodología</a>
+    <a href="#" onclick="showModal('modal-glosario'); return false;">Glosario</a>
+    <a href="#" onclick="showModal('modal-acerca'); return false;">Acerca de</a>
+  </div>
+</header>
+
+<aside id="sidebar">
+  <div class="tabs">
+    <button class="tab active" data-tab="consulta">Consulta</button>
+    <button class="tab" data-tab="calculo">Cálculo</button>
+  </div>
+
+  <!-- TAB CONSULTA -->
+  <div class="tab-content active" id="tab-consulta">
+    <div class="section">
+      <div class="section-label">Coordenada del sitio</div>
+      <div class="mode-toggle">
+        <button class="active" onclick="setCoordMode('geo', event)">LAT / LONG</button>
+        <button onclick="setCoordMode('utm', event)">UTM 17N</button>
+      </div>
+      <div id="geo-inputs" class="coord-inputs">
+        <div><label>LATITUD °N</label><input type="number" id="lat-input" step="0.0001" value="8.9824"></div>
+        <div><label>LONGITUD °W</label><input type="number" id="lng-input" step="0.0001" value="-79.5199"></div>
+      </div>
+      <div id="utm-inputs" class="coord-inputs" style="display:none;">
+        <div><label>ESTE (m)</label><input type="number" id="utm-e-input" step="1" value="664000"></div>
+        <div><label>NORTE (m)</label><input type="number" id="utm-n-input" step="1" value="993000"></div>
+      </div>
+      <button class="btn-primary" onclick="queryCoord()">CONSULTAR PUNTO</button>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Capa visible</div>
+      <div class="layer-toggle">
+        <button class="active" onclick="setLayer('ss', event)">Ss</button>
+        <button onclick="setLayer('s1', event)">S₁</button>
+        <button onclick="setLayer('pga', event)">PGA</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Resultados</div>
+      <div id="results-pane">
+        <div class="empty-state">Cargando mapas REP-21...</div>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong class="disclaimer-title">AVISO</strong>
+      Herramienta generada por <strong>LMM Ingeniería</strong>. Valores derivados del REP-21 oficial. Para diseño formal, verificar contra el reglamento. El usuario es responsable del uso técnico.
+    </div>
+  </div>
+
+  <!-- TAB CÁLCULO -->
+  <div class="tab-content" id="tab-calculo">
+    <div class="section">
+      <div class="section-label">1. Tipo de estructura <span class="info-icon" data-glos="metodo">ⓘ</span></div>
+      <select id="tipo-estructura" class="select-full" onchange="onTipoEstructuraChange()">
+        <option value="edificio">Edificio (ASCE 7-05 + REP-21)</option>
+        <option value="infra">Infraestructura Grupo 2</option>
+        <option value="vivienda">Vivienda Unifamiliar (Cap. 7)</option>
+        <option value="geotecnica">Estructura Geotécnica (Cap. 6)</option>
+      </select>
+    </div>
+
+    <!-- ===== ESPECTRO: Ss / S1 / PGA modo dual ===== -->
+    <div class="section" id="seccion-espectro">
+      <div class="section-label">Aceleraciones espectrales</div>
+      <div class="mode-toggle">
+        <button class="active" id="btn-espectro-auto" onclick="setEspectroMode('auto', event)">DESDE MAPA</button>
+        <button id="btn-espectro-manual" onclick="setEspectroMode('manual', event)">MANUAL</button>
+      </div>
+      <div id="espectro-auto-info" class="info-banner">
+        Valores cargados automáticamente de los mapas REP-21 (Clase B) según la coordenada del sitio.
+      </div>
+      <div id="espectro-manual-inputs" style="display:none;">
+        <div class="grid-3">
+          <div>
+            <label>Ss (g) <span class="info-icon" data-glos="Ss">ⓘ</span></label>
+            <input type="number" id="ss-manual" step="0.01" min="0" value="">
+          </div>
+          <div>
+            <label>S₁ (g) <span class="info-icon" data-glos="S1">ⓘ</span></label>
+            <input type="number" id="s1-manual" step="0.01" min="0" value="">
+          </div>
+          <div>
+            <label>PGA (g) <span class="info-icon" data-glos="PGA">ⓘ</span></label>
+            <input type="number" id="pga-manual" step="0.01" min="0" value="">
+          </div>
+        </div>
+        <div class="hint">Para uso con estudio específico de sitio (REP-21 §5.11), mapas URC ACP 2009 (REP-21 §3.2), o análisis dinámico de respuesta de sitio (ASCE 7-05 Cap. 21).</div>
+      </div>
+    </div>
+
+    <!-- Campos EDIFICIO / INFRAESTRUCTURA -->
+    <div id="campos-edificio">
+      <div class="section">
+        <div class="section-label">2. Clase de sitio <span class="info-icon" data-glos="ClaseSitio">ⓘ</span></div>
+        <select id="clase-sitio" class="select-full">
+          <option value="A">A — Roca dura</option>
+          <option value="B" selected>B — Roca</option>
+          <option value="C">C — Suelo muy denso / roca blanda</option>
+          <option value="D">D — Suelo rígido</option>
+          <option value="E">E — Suelo blando</option>
+          <option value="F">F — Requiere estudio (bloqueado)</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <div class="section-label">3. Categoría de riesgo <span class="info-icon" data-glos="Riesgo">ⓘ</span></div>
+        <select id="riesgo" class="select-full">
+          <option value="I">I — Bajo riesgo (Ie = 1.00)</option>
+          <option value="II" selected>II — Ordinarias (Ie = 1.00)</option>
+          <option value="III">III — Importantes (Ie = 1.25)</option>
+          <option value="IV">IV — Esenciales (Ie = 1.50)</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <div class="section-label">4. Sistema estructural <span class="info-icon" data-glos="R">ⓘ</span></div>
+        <select id="categoria-sistema" class="select-full" onchange="updateSistemas()">
+          <option value="concreto">Concreto Reforzado</option>
+          <option value="acero">Acero</option>
+          <option value="mamposteria">Mampostería</option>
+          <option value="otros">Otros / Personalizado</option>
+        </select>
+        <select id="sistema" class="select-full" style="margin-top:6px;" onchange="onSistemaChange()"></select>
+        <div id="sistema-info-box" class="info-banner" style="display:none;"></div>
+        
+        <div id="custom-system-panel" class="custom-system-panel" style="display:none;">
+          <div class="hint" style="margin-bottom: 8px;"><strong>Sistema personalizado.</strong> Consultar Tabla 12.2-1 ASCE 7-05 para R, Ω₀, Cd y verificar permisibilidad por CDS. Usuario asume responsabilidad.</div>
+          <div class="grid-2">
+            <div style="grid-column: span 2;">
+              <label>Nombre / descripción</label>
+              <input type="text" id="custom-nombre" class="input-full" placeholder="ej: Sistema dual SMRF + SCBF">
+            </div>
+            <div style="grid-column: span 2;">
+              <label>Referencia tabla 12.2-1 (opcional)</label>
+              <input type="text" id="custom-ref" class="input-full" placeholder="ej: Tabla 12.2-1 fila D2">
+            </div>
+          </div>
+          <div class="grid-3" style="margin-top: 6px;">
+            <div>
+              <label>R <span class="info-icon" data-glos="R">ⓘ</span></label>
+              <input type="number" id="custom-R" step="0.1" min="0.5" max="10" value="5.0">
+            </div>
+            <div>
+              <label>Ω₀ <span class="info-icon" data-glos="Omega">ⓘ</span></label>
+              <input type="number" id="custom-omega" step="0.1" min="1" max="5" value="2.5">
+            </div>
+            <div>
+              <label>Cd <span class="info-icon" data-glos="Cd">ⓘ</span></label>
+              <input type="number" id="custom-Cd" step="0.1" min="0.5" max="10" value="4.5">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">5. Altura del edificio hn (m) <span class="info-icon" data-glos="hn">ⓘ</span></div>
+        <input type="number" id="hn-edif" class="input-full" step="0.1" value="9.0" min="2">
+        <div class="hint">Altura desde la base hasta nivel superior estructural (azotea, sin penthouse pequeño).</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">6. Período T <span class="info-icon" data-glos="T">ⓘ</span></div>
+        <select id="modo-periodo" class="select-full" onchange="onModoPeriodoChange()">
+          <option value="auto" selected>Automático (Cu · Ta) — recomendado</option>
+          <option value="manual">Manual (T del análisis modal)</option>
+          <option value="ta">Ta puro (sin amplificar, conservador)</option>
+        </select>
+        <div id="periodo-auto-info" class="info-banner">
+          T se calculará automáticamente con Ta = Ct·hn^x (Ec. 12.8-7) y Cu de la Tabla 12.8-1.
+        </div>
+        <div id="periodo-manual-input" style="display:none; margin-top:6px;">
+          <label>T (s) — del análisis modal</label>
+          <input type="number" id="periodo-manual-val" class="input-full" step="0.01" value="0.5" min="0.05">
+          <div class="hint">Si T > Cu·Ta, ASCE 7-05 §12.8.2 limita a Cu·Ta.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campos VIVIENDA -->
+    <div id="campos-vivienda" style="display:none;">
+      <div class="warning-box">
+        <strong>METODOLOGÍA SIMPLIFICADA</strong> — REP-21 Capítulo 7. Aplica solo a viviendas unifamiliares de una planta apoyadas sobre suelo, mampostería confinada (R=1.5, Ω₀=2.5, Cd=1.25).
+      </div>
+
+      <div class="section">
+        <div class="section-label">2. Clase de sitio <span class="info-icon" data-glos="ClaseSitio">ⓘ</span></div>
+        <select id="clase-sitio-viv" class="select-full">
+          <option value="A">A — Roca dura</option>
+          <option value="B" selected>B — Roca</option>
+          <option value="C">C — Suelo muy denso / roca blanda</option>
+          <option value="D">D — Suelo rígido</option>
+          <option value="E">E — Suelo blando (no califica como típica)</option>
+          <option value="F">F — Requiere estudio (bloqueado)</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <div class="section-label">3. Condiciones adicionales</div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="suelos-problema">
+          <span>Arcillas expansivas o suelos susceptibles a licuación</span>
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="irregularidad">
+          <span>Irregularidad horizontal (Tabla 12.3-1 ASCE 7-05)</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Campos GEOTECNIA -->
+    <div id="campos-geotecnia" style="display:none;">
+      <div class="warning-box">
+        <strong>ANÁLISIS PSEUDOESTÁTICO</strong> — REP-21 Capítulo 6 + Manual de Geotecnia. NO usa metodología ASCE de edificios. kv obligatorio con envolvente de 3 escenarios (Cuadro 14 Nota 1).
+      </div>
+
+      <div class="section">
+        <div class="section-label">2. Tipo de estructura geotécnica <span class="info-icon" data-glos="tipoMuro">ⓘ</span></div>
+        <select id="tipo-geotecnia" class="select-full" onchange="onTipoGeoChange()"></select>
+        <div id="tipo-geo-info" class="info-banner"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">3. Clase de sitio <span class="info-icon" data-glos="ClaseSitio">ⓘ</span></div>
+        <select id="clase-sitio-geo" class="select-full">
+          <option value="A">A — Roca dura</option>
+          <option value="B" selected>B — Roca</option>
+          <option value="C">C — Suelo muy denso / roca blanda</option>
+          <option value="D">D — Suelo rígido</option>
+          <option value="E">E — Suelo blando</option>
+          <option value="F">F — Requiere estudio (bloqueado)</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <div class="section-label">4. Método de cálculo kh <span class="info-icon" data-glos="kh">ⓘ</span></div>
+        <select id="metodo-kh" class="select-full" onchange="onMetodoKhChange()">
+          <option value="A" selected>A — Default REP: kh = (2/3)·PGA/g</option>
+          <option value="B">B — Cuadro 14 ref. 35: kh = SDS/2.5 (requiere Ss/S1 manuales)</option>
+          <option value="C">C — Cuadro 14 ref. 8: kh = f(Apga) no lineal</option>
+          <option value="D">D — Cuadro 14 ref. 25: kh = 0.40·Apga/g</option>
+          <option value="E">E — Muro rígido restringido: kh = Apga/g</option>
+          <option value="F">F — AASHTO preliminar: kh = 1.5·Apga/g</option>
+        </select>
+        <div id="metodo-kh-info" class="info-banner"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">5. Coeficiente kv (envolvente) <span class="info-icon" data-glos="kv">ⓘ</span></div>
+        <label>Magnitud de kv como fracción de kh</label>
+        <select id="ratio-kv" class="select-full">
+          <option value="0.5" selected>kv = ±0.50·kh (práctica común, Kramer)</option>
+          <option value="0.67">kv = ±0.67·kh (intermedio)</option>
+          <option value="1.0">kv = ±kh (Cuadro 14 ref. 25, conservador)</option>
+        </select>
+        <div class="info-banner">
+          La app correrá los <strong>3 escenarios obligatorios</strong> (kv=0, +kv, −kv) y mostrará el gobernante. Manual §5.4 Cuadro 14 Nota 1.
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="calcular()">CALCULAR</button>
+
+    <div class="section" id="calc-results" style="display:none;">
+      <div class="section-label">Resultados</div>
+      <div id="calc-results-content"></div>
+    </div>
+
+    <div class="section" id="spectrum-section" style="display:none;">
+      <div class="section-label">Espectro de diseño</div>
+      <div class="chart-wrap"><canvas id="spectrum-chart"></canvas></div>
+    </div>
+
+    <button class="btn-primary" id="btn-pdf" style="display:none;" onclick="descargarPDF()">DESCARGAR REPORTE PDF</button>
+  </div>
+</aside>
+
+<div id="map"></div>
+<div id="contour-svg-overlay"></div>
+
+<div class="legend" id="legend">
+  <div class="legend-title">Sa (g) — <span id="legend-period">Ss (0.2 s)</span></div>
+  <div class="legend-scale" id="legend-scale"></div>
+</div>
+
+<footer>
+  <span>Herramienta generada por</span>
+  <strong>LMM INGENIERÍA</strong>
+  <span>·</span>
+  <span>SismoPanamá v2.0</span>
+  <span>·</span>
+  <span>Basado en REP-2021</span>
+</footer>
+
+<!-- MODAL Metodología -->
+<div class="modal" id="modal-metodologia" onclick="hideModal('modal-metodologia')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="hideModal('modal-metodologia')">×</button>
+    <h2>Metodología v2.0</h2>
+    <p><strong>Fuente normativa:</strong> REP-2021 + ASCE 7-05 + Manual de Geotecnia del REP-2021. Mapas oficiales del Anexo 3 (PGA, Ss, S₁ para Clase Sitio B, período de retorno 2500 años, 5% amortiguamiento).</p>
+
+    <p><strong>Tres metodologías diferenciadas:</strong></p>
+
+    <p><strong>1. Edificios e Infraestructura Grupo 2</strong></p>
+    <ul>
+      <li>ASCE 7-05 completo con modificaciones REP-21.</li>
+      <li>Cs según Ec. 12.8-2/3/4 con límites mín. (12.8-5, 12.8-6).</li>
+      <li>Ta calculado automáticamente (Ec. 12.8-7) con Ct, x según Tabla 12.8-2.</li>
+      <li>Cu según Tabla 12.8-1. T = min(T_manual, Cu·Ta) por §12.8.2.</li>
+      <li>Validación de sistema vs CDS y altura por Tabla 12.2-1.</li>
+      <li>Advertencias automáticas si Fa/Fv requieren análisis específico de sitio.</li>
+      <li>TL = 10 s (REP-21 §5.12.3).</li>
+    </ul>
+
+    <p><strong>2. Vivienda unifamiliar</strong> (REP-21 Cap. 7)</p>
+    <ul>
+      <li>Metodología simplificada — densidad mínima de paredes según PGA.</li>
+      <li>Triggers que invalidan construcción típica (PGA ≥ 0.40g, Clase E/F, suelos problemáticos, irregularidad).</li>
+    </ul>
+
+    <p><strong>3. Estructuras geotécnicas</strong> (REP-21 Cap. 6 + Manual)</p>
+    <ul>
+      <li>Análisis pseudoestático.</li>
+      <li>kh: 6 métodos del Cuadro 14 del Manual + factor 2/3 del REP §6.5.</li>
+      <li>kv: envolvente obligatorio de 3 escenarios (kv=0, +kv, −kv) por Cuadro 14 Nota 1.</li>
+      <li>Umbral para asumir kv=0: rígido ≤ 0.10, flexible ≤ 0.05.</li>
+    </ul>
+
+    <p><strong>Mejoras v2.0:</strong></p>
+    <ul>
+      <li>Override de Ss, S1, PGA y T (estudio específico de sitio).</li>
+      <li>Cálculo automático de Ta·Cu para todos los sistemas.</li>
+      <li>Validación Tabla 12.2-1 (sistemas prohibidos + límites de altura).</li>
+      <li>Advertencias de análisis específico de sitio cuando Fa/Fv se extrapolan.</li>
+      <li>kh con 6 métodos del Cuadro 14, envolvente kv automático.</li>
+      <li>Glosario embebido con referencias normativas en cada parámetro.</li>
+      <li>Memoria de cálculo paso a paso en cada resultado.</li>
+    </ul>
+    
+    <div class="lmm-tag">Herramienta generada por LMM Ingeniería</div>
+  </div>
+</div>
+
+<!-- MODAL Glosario -->
+<div class="modal" id="modal-glosario" onclick="hideModal('modal-glosario')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="hideModal('modal-glosario')">×</button>
+    <h2>Glosario de parámetros</h2>
+    <div id="glosario-content"></div>
+    <div class="lmm-tag">SismoPanamá v2.0 — Glosario normativo embebido</div>
+  </div>
+</div>
+
+<!-- MODAL Detalle parámetro (al hacer click en ⓘ) -->
+<div class="modal" id="modal-detalle" onclick="hideModal('modal-detalle')">
+  <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 480px;">
+    <button class="modal-close" onclick="hideModal('modal-detalle')">×</button>
+    <div id="detalle-content"></div>
+  </div>
+</div>
+
+<div class="modal" id="modal-acerca" onclick="hideModal('modal-acerca')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="hideModal('modal-acerca')">×</button>
+    <h2>Acerca de SismoPanamá</h2>
+    <p>SismoPanamá es una herramienta gratuita de consulta y cálculo sísmico basada en el Reglamento Estructural Panameño REP-2021.</p>
+    <p><strong>Desarrollada y generada por:</strong> LMM Ingeniería</p>
+    <p><strong>Licencia:</strong> MIT (código abierto)</p>
+    <p><strong>Marco legal:</strong> Resolución JTIA-020-2022, Gaceta Oficial Digital N° 29594-A (5 agosto 2022).</p>
+    <p><strong>Versión:</strong> <span id="acerca-version">v2.0</span></p>
+    <p><strong>Última actualización:</strong> <span id="acerca-fecha">—</span></p>
+    <p><strong>Aviso de responsabilidad:</strong> Esta herramienta es de referencia. El uso técnico es responsabilidad del ingeniero usuario. SismoPanamá ni LMM Ingeniería se hacen responsables de errores de diseño derivados del uso de esta herramienta.</p>
+    <div class="lmm-tag">© LMM Ingeniería — Herramienta libre para uso profesional</div>
+  </div>
+</div>
+
+<div class="modal" id="modal-changelog" onclick="hideModal('modal-changelog')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="hideModal('modal-changelog')">×</button>
+    <h2>Historial de versiones</h2>
+    <div id="changelog-content"></div>
+  </div>
+</div>
+
+<script src="lib/raster.js"></script>
+<script src="lib/seismic-calc.js"></script>
+<script src="lib/pdf-gen.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
