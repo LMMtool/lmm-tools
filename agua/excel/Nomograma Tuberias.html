@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nomograma Normativo &#8212; LMM Ingenier&#237;a</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--brand:#1a3c5e;--gold:#c8963e;--mid:#4a4a4a;--light:#7a7a7a;--bg:#fefcf9;--grid:#d0ccc4;--ok:#2e6b4f;--warn:#b45309;--bad:#8b3a3a;--info:#2c5f8a}
+body{background:var(--bg);color:var(--mid);font-family:'Source Sans 3',sans-serif;font-size:14px}
+.wrap{max-width:1080px;margin:0 auto;padding:16px}
+.brand-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--gold)}
+.brand-bar .logo{font-family:'Libre Baskerville',serif;font-size:18px;font-weight:700;color:var(--brand);letter-spacing:2px}
+.brand-bar .logo span{color:var(--gold)}
+.brand-bar .dev{font-size:9px;color:var(--light);text-align:right;line-height:1.4}
+h1{font-family:'Libre Baskerville',serif;font-size:18px;font-weight:400;color:var(--brand);letter-spacing:4px;text-transform:uppercase;text-align:center;margin-top:6px}
+.gold-line{width:160px;height:2px;background:var(--gold);margin:5px auto;opacity:.4}
+.sub{text-align:center;font-size:11px;color:var(--light);letter-spacing:1px;margin-bottom:10px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin-bottom:10px;padding:8px 12px;background:#f5f3ee;border-radius:6px;border:1px solid var(--grid)}
+.ctrl-group{display:flex;align-items:center;gap:6px}
+.ctrl-group label{font-size:10px;color:var(--light);text-transform:uppercase;letter-spacing:1px}
+.btn{padding:6px 18px;border:1.5px solid var(--grid);border-radius:4px;background:white;color:var(--mid);font-size:13px;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn.active{background:var(--brand);color:white;border-color:var(--gold);font-weight:600}
+.btn:hover{border-color:var(--gold)}
+.note{font-size:10px;color:var(--light);font-style:italic}
+.chart-area{position:relative}
+svg{display:block;width:100%;border-radius:6px;border:1px solid var(--grid);cursor:crosshair}
+.norm-panel{position:absolute;top:8px;right:8px;width:275px;background:rgba(254,252,249,.96);border:1px solid var(--grid);border-radius:6px;padding:10px;font-size:11px;line-height:1.5;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.06);display:none}
+.norm-panel.show{display:block}
+.norm-panel h3{font-family:'Libre Baskerville',serif;font-size:12px;color:var(--brand);margin-bottom:6px;border-bottom:1px solid var(--grid);padding-bottom:4px}
+.nr{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #e8e4dc}
+.nr:last-child{border:none}
+.nl{color:var(--light)}.nv{font-weight:600}
+.nv.ok{color:var(--ok)}.nv.warn{color:var(--warn)}.nv.bad{color:var(--bad)}
+.nref{font-size:9px;color:var(--info);font-style:italic;margin-top:4px;padding-top:4px;border-top:1px solid var(--grid)}
+.na{margin-top:6px;padding:6px 8px;border-radius:4px;font-size:10px;line-height:1.4}
+.na.ok{background:#e8f5e9;border-left:3px solid var(--ok);color:#1b5e20}
+.na.warn{background:#fff3e0;border-left:3px solid var(--warn);color:#7a4100}
+.na.bad{background:#fce4ec;border-left:3px solid var(--bad);color:#7a1a1a}
+.info-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;margin-top:10px}
+.ic{background:#f5f3ee;border:1px solid var(--grid);border-radius:6px;padding:10px;font-size:11px;line-height:1.5}
+.ic h4{font-family:'Libre Baskerville',serif;font-size:11px;color:var(--brand);margin-bottom:3px}
+.ic .ref{font-size:9px;color:var(--info);font-style:italic}
+.footer{display:flex;justify-content:space-between;align-items:center;border-top:2px solid var(--gold);padding-top:6px;margin-top:10px;flex-wrap:wrap;gap:4px}
+.footer .fl{font-size:9px;color:var(--light)}
+.footer .fr{font-size:10px;color:var(--brand);opacity:.7;white-space:nowrap;font-weight:600}
+.hint{position:absolute;top:55px;left:76px;background:rgba(254,252,249,.92);border:1px solid var(--grid);border-radius:4px;padding:8px 12px;font-size:11px;color:var(--light);pointer-events:none;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand-bar">
+    <div class="logo">LMM <span>Ingenier&#237;a</span></div>
+    <div class="dev">Desarrollado por LMM Ingenier&#237;a<br>Ing. Luis M&#225;rquez</div>
+  </div>
+
+  <h1>Nomograma Normativo</h1>
+  <div class="gold-line"></div>
+  <div class="sub">IDAAN 2006 &#8226; MOP 2021 &#8226; CEPIS/OPS &#8226; Manning &#8226; Tirante d/D = 0.80</div>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>Sistema:</label>
+      <button class="btn active" onclick="setSys('SAN',this)">Sanitario</button>
+      <button class="btn" onclick="setSys('PLU',this)">Pluvial</button>
+    </div>
+    <div class="ctrl-group">
+      <label>Material:</label>
+      <button class="btn active" onclick="setMat('PVC',this)">PVC / HDPE</button>
+      <button class="btn" onclick="setMat('CON',this)">Concreto</button>
+    </div>
+    <span class="note">PVC y HDPE comparten par&#225;metros hidr&#225;ulicos (IDAAN Art.4, Art.7)</span>
+  </div>
+
+  <div class="chart-area">
+    <svg id="chart" viewBox="0 0 920 540"></svg>
+    <div class="norm-panel" id="np"></div>
+    <div class="hint" id="hint">Pasa el cursor sobre la gr&#225;fica<br>para ver datos normativos en tiempo real</div>
+  </div>
+
+  <div class="info-cards">
+    <div class="ic"><h4>&#9889; Vel. m&#237;nima: 0.60 m/s</h4>Garantiza autolimpieza. Debajo, los s&#243;lidos sedimentan y obstruyen.<div class="ref">IDAAN Art.6 &#8226; MOP p.225 &#8226; CEPIS &#167;4.3</div></div>
+    <div class="ic" id="cVmax"><h4>&#9889; Vel. m&#225;xima: 3.35 m/s</h4>Previene erosi&#243;n interna del material y deterioro de juntas.<div class="ref">IDAAN Art.7 &#8226; MOP p.225</div></div>
+    <div class="ic"><h4>&#128167; Tirante d/D = 0.80</h4>Deja 20% libre para ventilaci&#243;n y picos. Si se llena m&#225;s entra en presi&#243;n y falla.<div class="ref">IDAAN Art.5 &#8226; CEPIS &#167;4.2 (0.75)</div></div>
+    <div class="ic" id="cN"><h4>&#128295; Manning n = 0.009</h4>Rugosidad del material. Menor n = menos fricci&#243;n = m&#225;s capacidad.<div class="ref">IDAAN Art.4 (n=0.01) &#8226; MOP p.222 (n=0.009)</div></div>
+  </div>
+
+  <div class="footer">
+    <span class="fl">Manning d/D=0.80 &#8226; Normas: IDAAN 2006 Secc.C + MOP 2021 V.9 + CEPIS/OPS</span>
+    <span class="fr">LMM Ingenier&#237;a | Ing. Luis M&#225;rquez</span>
+  </div>
+</div>
+
+<script>
+const TIR=0.80,DIAMS=[18,20,24,30,36];
+const COL=['#8b3a3a','#b87333','#2e6b4f','#2c5f8a','#5b4a8a'];
+const FLA=['rgba(139,58,58,.12)','rgba(184,115,51,.12)','rgba(46,107,79,.12)','rgba(44,95,138,.12)','rgba(91,74,138,.12)'];
+const BR='#1a3c5e',GD='#c8963e',MD='#4a4a4a',LT='#7a7a7a',BG='#fefcf9',GR='#d0ccc4';
+
+const NM={
+SAN:{PVC:{n:.009,vmin:.6,vmax:3.35,nR:'IDAAN Art.4: n=0.01 / MOP p.222: n=0.009',vmxR:'IDAAN Art.7: 3.35 m/s PVC/HDPE',vmnR:'IDAAN Art.6: 0.60 m/s'},
+     CON:{n:.013,vmin:.6,vmax:3.00,nR:'IDAAN Art.6: n=0.013 / MOP p.222: n=0.013',vmxR:'IDAAN Art.7: 3.00 m/s concreto',vmnR:'IDAAN Art.6: 0.60 m/s'}},
+PLU:{PVC:{n:.009,vmin:.6,vmax:5.00,nR:'MOP p.222: n=0.009 PVC/HDPE',vmxR:'MOP p.225: 5.0 m/s tuberia flexible',vmnR:'MOP p.225: 0.60 m/s'},
+     CON:{n:.013,vmin:.6,vmax:4.73,nR:'MOP p.222: n=0.013 concreto',vmxR:'MOP p.225: 4.73 m/s HR/concreto',vmnR:'MOP p.225: 0.60 m/s'}}
+};
+
+const W=920,H=540,PT=45,PR=68,PB=50,PL=68,CW=W-PL-PR,CH=H-PT-PB;
+let cS='SAN',cM='PVC';
+function gn(){return NM[cS][cM];}
+
+function mp(d,s,n){const dm=d*.0254,sd=s/100,th=2*Math.acos(1-2*TIR),A=dm*dm/8*(th-Math.sin(th)),P=dm*th/2,Rh=A/P;return{q:(1/n)*Math.pow(Rh,2/3)*Math.pow(sd,.5)*A,v:(1/n)*Math.pow(Rh,2/3)*Math.pow(sd,.5)};}
+function sfv(d,vt,n){const dm=d*.0254,th=2*Math.acos(1-2*TIR),A=dm*dm/8*(th-Math.sin(th)),P=dm*th/2,Rh=A/P;return Math.pow(vt*n/Math.pow(Rh,2/3),2)*100;}
+function fq(q){return q>=1?q.toFixed(2):q>=.1?q.toFixed(3):q.toFixed(4);}
+
+let mxS,yN,yX,sl=[];
+function cr(){const nm=gn();let ms=Math.min(sfv(DIAMS[0],nm.vmax+1.5,nm.n)*1.05,5.9);ms=Math.ceil(ms*2)/2;if(ms>5.5)ms=5.5;mxS=ms;
+const qs=DIAMS.flatMap(d=>[mp(d,.05,nm.n).q,mp(d,mxS,nm.n).q]);yN=Math.min(...qs)*.55;yX=Math.max(...qs)*1.5;
+sl=[];for(let i=0;i<200;i++)sl.push(.05+i/199*(mxS-.05));}
+function sx(v){return PL+(v-.05)/(mxS-.05)*CW;}
+function sy(v){return PT+CH-(Math.log(v)-Math.log(yN))/(Math.log(yX)-Math.log(yN))*CH;}
+function ix(p){return .05+(p-PL)/CW*(mxS-.05);}
+function iy(p){return Math.exp(Math.log(yN)+(PT+CH-p)/CH*(Math.log(yX)-Math.log(yN)));}
+function ns(t,a,x){const e=document.createElementNS('http://www.w3.org/2000/svg',t);if(a)Object.entries(a).forEach(([k,v])=>e.setAttribute(k.replace(/([A-Z])/g,'-$1').toLowerCase(),v));if(x)e.textContent=x;return e;}
+
+function draw(){
+cr();const nm=gn(),svg=document.getElementById('chart');svg.innerHTML='';
+const df=ns('defs');df.innerHTML='<filter id="sh"><feDropShadow dx="1" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,.08)"/></filter>';svg.appendChild(df);
+
+// BG
+svg.appendChild(ns('rect',{x:0,y:0,width:W,height:H,fill:BG}));
+
+// Grid Y
+const yT=[.03,.05,.08,.1,.15,.2,.3,.5,.7,1,1.5,2,3,5].filter(v=>v>=yN&&v<=yX);
+yT.forEach(v=>{svg.appendChild(ns('line',{x1:PL,x2:W-PR,y1:sy(v),y2:sy(v),stroke:GR,strokeWidth:.5}));
+svg.appendChild(ns('text',{x:PL-5,y:sy(v),textAnchor:'end',dominantBaseline:'middle',fill:MD,fontSize:10},fq(v)));
+svg.appendChild(ns('text',{x:W-PR+5,y:sy(v),textAnchor:'start',dominantBaseline:'middle',fill:LT,fontSize:10},Math.round(v*1000)+''));});
+
+// Grid X
+const st=mxS<=4?.5:1;
+for(let v=st;v<=mxS;v+=st){const vr=Math.round(v*10)/10;
+svg.appendChild(ns('line',{x1:sx(vr),x2:sx(vr),y1:PT,y2:H-PB,stroke:GR,strokeWidth:.5}));
+svg.appendChild(ns('text',{x:sx(vr),y:H-PB+15,textAnchor:'middle',fill:MD,fontSize:10},vr+'%'));}
+
+// Axis labels
+svg.appendChild(ns('text',{x:W/2,y:H-3,textAnchor:'middle',fill:BR,fontSize:11},'Pendiente (%) = (cm/m)'));
+svg.appendChild(ns('text',{x:13,y:H/2,textAnchor:'middle',fill:BR,fontSize:10,transform:'rotate(-90,13,'+H/2+')'},'Caudal a tirante 80% (m\u00b3/s)'));
+svg.appendChild(ns('text',{x:W-6,y:H/2,textAnchor:'middle',fill:LT,fontSize:9,transform:'rotate(90,'+(W-6)+','+H/2+')'},'Caudal (L/s)'));
+
+// Fills
+const cv=DIAMS.map(d=>sl.map(s=>{const r=mp(d,s,nm.n);return{x:sx(s),y:sy(r.q)};}));
+for(let i=0;i<cv.length-1;i++){let p=cv[i].map((pt,j)=>(j?'L':'M')+pt.x.toFixed(1)+','+pt.y.toFixed(1)).join(' ');
+p+=' '+[...cv[i+1]].reverse().map(pt=>'L'+pt.x.toFixed(1)+','+pt.y.toFixed(1)).join(' ')+'Z';
+svg.appendChild(ns('path',{d:p,fill:FLA[i+1]}));}
+
+// Iso-velocity: 0.6, 1, 2, 3, 4, vmax
+const thC=2*Math.acos(1-2*TIR),rhF=(thC-Math.sin(thC))/(4*thC),aF=(thC-Math.sin(thC))/8;
+const dMn=DIAMS[0]*.0254,dMx=DIAMS[4]*.0254;
+const vSet=new Set([nm.vmin,1,2,3,4,5,nm.vmax]);
+[...vSet].sort((a,b)=>a-b).forEach(vt=>{
+  const pts=[];
+  sl.forEach(s=>{const sd=s/100;if(sd<=0)return;
+    const Dn=Math.pow(vt*nm.n/(Math.pow(rhF,2/3)*Math.pow(sd,.5)),1.5);
+    if(Dn>=dMn*.8&&Dn<=dMx*1.2){const q=vt*Dn*Dn*aF;if(q>=yN&&q<=yX)pts.push({x:sx(s),y:sy(q)});}
+  });
+  if(pts.length<2)return;
+  const isMin=Math.abs(vt-nm.vmin)<.01,isMax=Math.abs(vt-nm.vmax)<.05;
+  const clr=isMin?'#b45309':isMax?'#8b3a3a':vt<=2?'#6b6b6b':'#996060';
+  const lw=isMin||isMax?1.8:1;
+  const da=isMin?'8,5':isMax?'10,4,3,4':'5,4';
+  svg.appendChild(ns('path',{d:pts.map((p,j)=>(j?'L':'M')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' '),fill:'none',stroke:clr,strokeWidth:lw,strokeDasharray:da,opacity:isMin||isMax?.6:.4}));
+  const lp=pts[pts.length-1];
+  let lb='V='+vt+' m/s';if(isMin)lb+=' (min)';if(isMax)lb+=' (max)';
+  svg.appendChild(ns('text',{x:lp.x+3,y:lp.y-3,fill:clr,fontSize:isMin||isMax?8:7,opacity:.8,fontWeight:isMin||isMax?'bold':'normal'},lb));
+});
+
+// Main curves
+const li=Math.floor(sl.length*.72);
+DIAMS.forEach((d,ci)=>{
+  const pts=sl.map(s=>{const r=mp(d,s,nm.n);return{x:sx(s),y:sy(r.q)};});
+  svg.appendChild(ns('path',{d:pts.map((p,j)=>(j?'L':'M')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' '),fill:'none',stroke:COL[ci],strokeWidth:2.5,strokeLinecap:'round'}));
+  const lp=pts[li];
+  svg.appendChild(ns('rect',{x:lp.x-40,y:lp.y-10,width:80,height:20,rx:4,fill:COL[ci],opacity:.9}));
+  svg.appendChild(ns('text',{x:lp.x,y:lp.y+4,textAnchor:'middle',fill:'white',fontSize:9.5,fontWeight:'bold'},d+'" ('+Math.round(d*25.4)+' mm)'));
+});
+
+// Border
+svg.appendChild(ns('rect',{x:PL,y:PT,width:CW,height:CH,fill:'none',stroke:GR,strokeWidth:.8}));
+
+// Title
+const sN=cS==='SAN'?'Sanitario':'Pluvial',mN=cM==='PVC'?'PVC/HDPE':'Concreto';
+svg.appendChild(ns('text',{x:W/2,y:15,textAnchor:'middle',fill:BR,fontSize:13,fontWeight:'bold'},'Alcantarillado '+sN+' \u2014 '+mN+' (n='+nm.n+')'));
+svg.appendChild(ns('text',{x:W/2,y:30,textAnchor:'middle',fill:LT,fontSize:9.5},'d/D='+TIR+' | Vmin='+nm.vmin+' m/s | Vmax='+nm.vmax+' m/s | IDAAN+MOP+CEPIS'));
+
+// LMM watermark bottom-left
+svg.appendChild(ns('text',{x:PL+4,y:H-PB-4,fill:BR,fontSize:8,opacity:.3,fontWeight:'bold'},'LMM Ingenier\u00eda'));
+
+document.getElementById('hint').style.display='block';
+document.getElementById('np').classList.remove('show');
+}
+
+let hG=null;
+function onMv(e){
+const svg=document.getElementById('chart'),rc=svg.getBoundingClientRect();
+const mx=(e.clientX-rc.left)*(W/rc.width),my=(e.clientY-rc.top)*(H/rc.height);
+document.getElementById('hint').style.display='none';
+if(hG){hG.remove();hG=null;}
+if(mx<PL||mx>W-PR||my<PT||my>H-PB){document.getElementById('np').classList.remove('show');return;}
+
+const nm=gn(),sV=ix(mx);
+let b=null,bd=1e9;
+DIAMS.forEach(d=>{const r=mp(d,sV,nm.n);const di=Math.abs(Math.log(r.q)-Math.log(iy(my)));if(di<bd){bd=di;b={d,s:sV,q:r.q,v:r.v};}});
+if(!b)return;
+
+const sY=sy(b.q),sX=sx(b.s);
+hG=ns('g');
+hG.appendChild(ns('line',{x1:mx,x2:mx,y1:PT,y2:H-PB,stroke:BR,strokeWidth:.7,strokeDasharray:'4,3',opacity:.3}));
+hG.appendChild(ns('line',{x1:PL,x2:W-PR,y1:sY,y2:sY,stroke:BR,strokeWidth:.7,strokeDasharray:'4,3',opacity:.3}));
+hG.appendChild(ns('circle',{cx:sX,cy:sY,r:6,fill:GD,stroke:BR,strokeWidth:1.5}));
+svg.appendChild(hG);
+
+const np=document.getElementById('np');
+const ok=b.v>=nm.vmin&&b.v<=nm.vmax,lo=b.v<nm.vmin,hi=b.v>nm.vmax;
+let al='';
+if(ok)al='<div class="na ok">\u2714 Velocidad cumple normativa ('+nm.vmin+' \u2013 '+nm.vmax+' m/s).<br><span style="font-size:9px">'+nm.vmxR+'</span></div>';
+else if(lo)al='<div class="na bad">\u2716 V='+b.v.toFixed(2)+' m/s < '+nm.vmin+' m/s. No cumple autolimpieza. S\u00f3lidos sedimentar\u00e1n.<br><b>Soluci\u00f3n:</b> Aumentar pendiente o reducir di\u00e1metro.<br><span style="font-size:9px">'+nm.vmnR+'</span></div>';
+else al='<div class="na warn">\u26a0 V='+b.v.toFixed(2)+' m/s > '+nm.vmax+' m/s. Riesgo erosi\u00f3n.<br><b>Soluci\u00f3n:</b> Reducir pendiente o aumentar di\u00e1metro.<br><span style="font-size:9px">'+nm.vmxR+'</span></div>';
+
+let da='';
+if(cS==='SAN'&&b.d<6)da='<div class="na bad">\u2716 \u00d8 < 6" m\u00ednimo sanitario. <span style="font-size:9px">IDAAN Art.4</span></div>';
+
+const sL=cS==='SAN'?'Sanitario':'Pluvial',mL=cM==='PVC'?'PVC/HDPE':'Concreto';
+np.innerHTML=
+'<h3>\u00d8'+b.d+'" ('+Math.round(b.d*25.4)+' mm) \u2014 '+sL+'</h3>'+
+'<div class="nr"><span class="nl">Pendiente</span><span class="nv">'+b.s.toFixed(2)+'%</span></div>'+
+'<div class="nr"><span class="nl">Caudal</span><span class="nv">'+fq(b.q)+' m\u00b3/s ('+Math.round(b.q*1000)+' L/s)</span></div>'+
+'<div class="nr"><span class="nl">Velocidad</span><span class="nv '+(ok?'ok':lo?'bad':'warn')+'">'+b.v.toFixed(2)+' m/s</span></div>'+
+'<div class="nr"><span class="nl">Material</span><span class="nv">'+mL+' (n='+nm.n+')</span></div>'+
+'<div class="nr"><span class="nl">Tirante</span><span class="nv">d/D='+TIR+' ('+Math.round(TIR*100)+'%)</span></div>'+
+'<div class="nr"><span class="nl">C\u00e1maras insp.</span><span class="nv">cada 100m m\u00e1x</span></div>'+
+al+da+
+'<div class="nref">IDAAN 2006 Secc.C + MOP 2021 V.9 + CEPIS/OPS</div>';
+np.classList.add('show');
+}
+
+function onLv(){if(hG){hG.remove();hG=null;}document.getElementById('np').classList.remove('show');document.getElementById('hint').style.display='block';}
+
+function setSys(s,b){cS=s;b.parentElement.querySelectorAll('.btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');uc();draw();}
+function setMat(m,b){cM=m;b.parentElement.querySelectorAll('.btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');uc();draw();}
+function uc(){const nm=gn(),ml=cM==='PVC'?'PVC/HDPE':'Concreto';
+document.getElementById('cVmax').querySelector('h4').textContent='\u26a1 Vel. m\u00e1xima: '+nm.vmax+' m/s ('+ml+')';
+document.getElementById('cVmax').querySelector('.ref').textContent=nm.vmxR;
+document.getElementById('cN').querySelector('h4').textContent='\ud83d\udd27 Manning n = '+nm.n+' ('+ml+')';
+document.getElementById('cN').querySelector('.ref').textContent=nm.nR;}
+
+document.addEventListener('DOMContentLoaded',()=>{draw();
+const s=document.getElementById('chart');s.addEventListener('mousemove',onMv);s.addEventListener('mouseleave',onLv);});
+</script>
+</body>
+</html>
