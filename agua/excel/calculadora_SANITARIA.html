@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMM Ingeniería — Calculadora Bomba — IMPULSIÓN SANITARIA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --c: #4A90C4;
+    --c-osc: #1E3A5F;
+    --c-cl: #F5F7FA;
+    --grid: rgba(74, 144, 196, 0.08);
+    --tinta: #1A1A2E;
+    --gris: #6B7280;
+    --papel: #F5F7FA;
+    --linea: #d4d4d4;
+    --alert: #DC2626;
+    --ok: #2D6A9F;
+    --warn: #D97706;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Verdana, 'Verdana UI', Geneva, sans-serif;
+    background: var(--papel);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--tinta);
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  
+  .brand-bar {
+    background: var(--tinta);
+    color: white;
+    padding: 8px 18px;
+    border-radius: 4px 4px 0 0;
+    border: 2px solid var(--tinta);
+    border-bottom: none;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .brand-bar .lmm { font-weight: bold; }
+  .brand-bar .doc-id { opacity: 0.7; font-size: 11px; }
+  
+  header {
+    background: var(--c);
+    color: white;
+    padding: 20px 28px;
+    border: 2px solid var(--c-osc);
+    border-top: none;
+    border-bottom: none;
+    position: relative;
+  }
+  header::before {
+    content: "03";
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-size: 13px;
+    opacity: 0.6;
+    letter-spacing: 2px;
+  }
+  h1 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-size: 12px;
+    opacity: 0.92;
+    font-style: italic;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  
+  /* Tabs */
+  .tabs {
+    background: white;
+    border: 2px solid var(--c-osc);
+    border-bottom: none;
+    display: flex;
+    padding: 0 12px;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    padding: 14px 22px;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    color: var(--gris);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--c-osc); }
+  .tab-btn.active {
+    color: var(--c-osc);
+    border-bottom-color: var(--c);
+  }
+  
+  main {
+    background: white;
+    border: 2px solid var(--c-osc);
+    border-radius: 0 0 4px 4px;
+    padding: 28px;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 28px;
+  }
+  @media (max-width: 800px) {
+    .calc-grid { grid-template-columns: 1fr; }
+    body { padding: 10px; }
+    main { padding: 18px; }
+    h1 { font-size: 20px; }
+    .tab-btn { padding: 12px 14px; font-size: 11px; letter-spacing: 1px; }
+  }
+  
+  .panel-input h2, .panel-output h2, .panel-input h3 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--c-osc);
+    border-bottom: 2px solid var(--c);
+    padding-bottom: 6px;
+    margin-bottom: 18px;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  .panel-input h3 {
+    font-size: 12px;
+    border-bottom: 1px dashed var(--c);
+    margin: 18px 0 12px;
+  }
+  
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--gris);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .field label .unit { color: var(--c); font-weight: normal; font-family: 'IBM Plex Mono', 'Courier New', monospace; }
+  .field input, .field select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 16px;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    border: 1.5px solid var(--linea);
+    border-radius: 3px;
+    background: var(--papel);
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--c); background: white; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  
+  .slider-field { margin-bottom: 14px; }
+  .slider-field label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--gris);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .slider-val {
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-size: 16px;
+    color: var(--c-osc);
+    background: var(--c-cl);
+    padding: 2px 10px;
+    border-radius: 3px;
+    font-weight: bold;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    background: var(--linea);
+    border-radius: 3px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    background: var(--c);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 0 4px rgba(0,0,0,0.3);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 22px; height: 22px;
+    background: var(--c);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid white;
+  }
+  
+  .chart-block {
+    background: white;
+    border: 2px solid var(--c);
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 3px;
+  }
+  .chart-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--c-osc);
+    margin-bottom: 8px;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-weight: bold;
+  }
+  canvas { display: block; width: 100% !important; max-width: 100%; height: auto !important; }
+  
+  .result-block {
+    background: var(--c-cl);
+    border-left: 4px solid var(--c);
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  .result-block.main { background: #fff8e1; border-left: 4px solid var(--warn); }
+  .result-block.alert { background: #ffebee; border-left: 4px solid var(--alert); }
+  .result-block.ok { background: #e8f5e9; border-left: 4px solid var(--ok); }
+  .result-row { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0; }
+  .result-label { font-size: 12px; color: var(--gris); text-transform: uppercase; letter-spacing: 1px; }
+  .result-value { font-size: 18px; font-weight: bold; color: var(--c-osc); }
+  .result-value.big { font-size: 28px; }
+  .result-value.alert { color: var(--alert); }
+  .result-value.ok { color: var(--ok); }
+  .result-value.warn { color: var(--warn); }
+  
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  .badge.ok { background: var(--ok); color: white; }
+  .badge.warn { background: var(--warn); color: white; }
+  .badge.alert { background: var(--alert); color: white; }
+  
+  .formula { font-size: 11px; color: var(--gris); font-style: italic; margin-top: 2px; font-family: 'IBM Plex Mono', 'Courier New', monospace; }
+  .divider { border-top: 1px dashed var(--linea); margin: 16px 0; }
+  
+  .footer-note {
+    margin-top: 18px;
+    padding: 12px;
+    background: var(--papel);
+    border: 1px dashed var(--linea);
+    font-size: 11px;
+    color: var(--gris);
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    line-height: 1.5;
+  }
+  
+  .conversion {
+    background: var(--c-cl);
+    padding: 6px 10px;
+    margin-top: 4px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    color: var(--c-osc);
+  }
+  
+  .npsh-bar {
+    margin-top: 8px;
+    height: 24px;
+    background: linear-gradient(to right, #ffebee 0%, #ffebee 40%, #fff8e1 40%, #fff8e1 60%, #e8f5e9 60%);
+    border: 1px solid var(--linea);
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+  .npsh-marker {
+    position: absolute;
+    top: -4px; bottom: -4px;
+    width: 4px;
+    background: var(--alert);
+    box-shadow: 0 0 4px rgba(0,0,0,0.3);
+  }
+  
+  /* Teoria */
+  .theory { max-width: 800px; line-height: 1.7; font-size: 14px; }
+  .theory h3 {
+    font-size: 18px;
+    color: var(--c-osc);
+    margin: 24px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--c);
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    letter-spacing: 1px;
+  }
+  .theory h3:first-child { margin-top: 0; }
+  .theory h4 {
+    font-size: 14px;
+    color: var(--c-osc);
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  .theory p { margin-bottom: 10px; text-align: justify; }
+  .theory ul { margin: 8px 0 12px 24px; }
+  .theory li { margin-bottom: 4px; }
+  .theory strong { color: var(--c-osc); }
+  .formula-block {
+    background: var(--papel);
+    border-left: 4px solid var(--c);
+    padding: 12px 18px;
+    margin: 12px 0;
+    border-radius: 3px;
+  }
+  .formula-name {
+    font-size: 11px;
+    color: var(--c-osc);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  .formula-block code {
+    display: block;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--tinta);
+    padding: 4px 0;
+  }
+  .formula-note {
+    font-size: 11px;
+    color: var(--gris);
+    font-style: italic;
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .var-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-size: 13px;
+  }
+  .var-table th, .var-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--linea);
+  }
+  .var-table th {
+    background: var(--c-cl);
+    color: var(--c-osc);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  footer {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--tinta);
+    color: white;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-size: 11px;
+    text-align: center;
+    letter-spacing: 1px;
+    line-height: 1.7;
+  }
+  footer .lmm { font-weight: bold; color: var(--c-cl); font-size: 13px; }
+  footer .disclaimer { opacity: 0.7; margin-top: 6px; }
+  
+  /* === HELP ICONS + MODAL === */
+  .help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--c);
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 6px;
+    border: none;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    transition: background 0.15s, transform 0.15s;
+    user-select: none;
+  }
+  .help-icon:hover {
+    background: var(--c-osc);
+    transform: scale(1.15);
+  }
+  
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: white;
+    border: 2px solid var(--c-osc);
+    border-radius: 6px;
+    padding: 24px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 32px; height: 32px;
+    border: none;
+    background: var(--tinta);
+    color: white;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  .modal h3 {
+    color: var(--c-osc);
+    margin-bottom: 12px;
+    padding-right: 40px;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    letter-spacing: 1px;
+    border-bottom: 2px solid var(--c);
+    padding-bottom: 8px;
+  }
+  .modal p { margin-bottom: 10px; line-height: 1.6; font-size: 14px; }
+  .modal strong { color: var(--c-osc); }
+  .modal ul { margin: 8px 0 12px 24px; font-size: 14px; }
+  .modal li { margin-bottom: 6px; }
+  .modal .ejemplo {
+    background: var(--c-cl);
+    border-left: 4px solid var(--c);
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 13px;
+    border-radius: 3px;
+  }
+  .modal .diagram {
+    background: var(--papel);
+    border: 1px solid var(--linea);
+    padding: 12px;
+    margin: 12px 0;
+    border-radius: 4px;
+    text-align: center;
+  }
+  .modal .diagram svg { max-width: 100%; height: auto; }
+  
+  /* Etiquetas con icono ayuda - alinear */
+  .field label, .slider-field label > span:first-child {
+    display: inline-flex;
+    align-items: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="brand-bar">
+    <span class="lmm">LMM INGENIERÍA</span>
+    <span class="doc-id">DOC-03 · CALC v2.0</span>
+  </div>
+  <header>
+    <h1>CALCULADORA BOMBA — IMPULSIÓN SANITARIA</h1>
+    <div class="subtitle">Sumergible vortex / canal · Paso sólidos · Q ≤ 3 MGD · η real 60–72%</div>
+  </header>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="calc">// Calculadora</button>
+    <button class="tab-btn" data-tab="teoria">// Teoría</button>
+    <button class="tab-btn" data-tab="inverso">// Inverso</button>
+  </nav>
+  <main>
+    
+    <div class="tab-panel active" id="panel-calc">
+      <div class="calc-grid">
+        <section class="panel-input">
+          <h2>// Datos entrada</h2>
+          
+      <div class="field">
+        <label>Caudal Q <span class="unit">[gpm]</span> <span class="help-icon" data-help="Q">?</span></label>
+        <input type="number" id="Q" value="700" min="50" step="10">
+        <div class="conversion" id="conv_Q">— MGD · — m³/h · — L/s</div>
+      </div>
+      
+      <div class="field-row">
+        <div class="field">
+          <label>H estática <span class="unit">[ft]</span> <span class="help-icon" data-help="Hest">?</span></label>
+          <input type="number" id="Hest" value="100" min="0" step="1">
+        </div>
+        <div class="field">
+          <label>P descarga <span class="unit">[psi]</span> <span class="help-icon" data-help="Pdesc">?</span></label>
+          <input type="number" id="Pdesc" value="0" min="0" step="1">
+        </div>
+      </div>
+          
+          <div class="field-row">
+            <div class="field">
+              <label>Long. tubería <span class="unit">[ft]</span> <span class="help-icon" data-help="L">?</span></label>
+              <input type="number" id="L" value="800" min="0" step="1">
+            </div>
+            <div class="field">
+              <label>Diámetro <span class="unit">[in]</span> <span class="help-icon" data-help="D">?</span></label>
+              <select id="D">
+            <option value="3">3"</option>
+            <option value="4">4"</option>
+            <option value="6">6"</option>
+            <option value="8" selected>8"</option>
+            <option value="10">10"</option>
+            <option value="12">12"</option></select>
+            </div>
+          </div>
+          
+          <div class="field">
+            <label>Material tubería (C Hazen-Williams) <span class="help-icon" data-help="C">?</span></label>
+            <select id="C">
+            <option value="150">PVC nuevo · 150</option>
+            <option value="140" selected>HDPE · 140</option>
+            <option value="120">Acero galv. · 120</option>
+            <option value="100">Acero usado · 100</option></select>
+          </div>
+          
+          <div class="slider-field">
+            <label><span>Eficiencia η <span class="help-icon" data-help="eta">?</span></span><span class="slider-val"><span id="eta_val">65</span>%</span></label>
+            <input type="range" id="eta" value="65" min="40" max="80" step="1">
+          </div>
+          
+          <div class="slider-field">
+            <label><span>Factor servicio FS <span class="help-icon" data-help="FS">?</span></span><span class="slider-val" id="fs_val">1.25</span></label>
+            <input type="range" id="FS" value="1.25" min="1.00" max="1.50" step="0.05">
+          </div>
+          
+          <div class="slider-field">
+            <label><span>Gravedad específica SG <span class="help-icon" data-help="SG">?</span></span><span class="slider-val" id="sg_val">1.02</span></label>
+            <input type="range" id="SG" value="1.02" min="0.95" max="1.15" step="0.01">
+          </div>
+          
+          
+      <div class="field">
+        <label>Factor corrección sólidos K <span class="help-icon" data-help="K">?</span></label>
+        <select id="K">
+          <option value="1.00">1.00 — agua limpia</option>
+          <option value="1.10" selected>1.10 — sanitario normal</option>
+          <option value="1.15">1.15 — sanitario con basura</option>
+          <option value="1.25">1.25 — lodo espesado</option>
+        </select>
+      </div>
+          
+          <div class="footer-note">
+            <strong>// USO:</strong> ajuste cualquier valor — resultados actualizan en vivo. La curva del sistema y motor NEMA se recalculan automáticamente.
+          </div>
+        </section>
+        
+        <section class="panel-output">
+          <h2>// Resultados</h2>
+          
+          <div class="chart-block">
+            <div class="chart-title">// Curva del sistema: TDH vs Q</div>
+            <canvas id="chart"></canvas>
+          </div>
+          
+          <div class="result-block main">
+            <div class="result-row">
+              <span class="result-label">Motor NEMA recomendado</span>
+              <span class="result-value big warn" id="motor_nema">—</span>
+            </div>
+            <div class="formula" id="formula_motor"></div>
+          </div>
+          
+          <div class="result-block">
+            <div class="result-row">
+              <span class="result-label">TDH total</span>
+              <span class="result-value" id="tdh">—</span>
+            </div>
+            <div class="formula">H_estática + H_presión + hf_total</div>
+            <div class="divider"></div>
+            <div class="result-row">
+              <span class="result-label">WHP</span>
+              <span class="result-value" id="whp">—</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">BHP</span>
+              <span class="result-value" id="bhp">—</span>
+            </div>
+            
+        <div class="result-row">
+          <span class="result-label">BHP corregido (×K)</span>
+          <span class="result-value warn" id="bhp_corr">—</span>
+        </div>
+        <div class="formula">BHP_corr = BHP × K (factor sólidos)</div>
+            <div class="result-row">
+              <span class="result-label">Potencia motor</span>
+              <span class="result-value" id="pmotor">—</span>
+            </div>
+          </div>
+          
+          <div class="result-block" id="block_v">
+            <div class="result-row">
+              <span class="result-label">Velocidad</span>
+              <span class="result-value" id="vel">—</span>
+            </div>
+            <div class="formula">V = 0.4085 · Q / D²</div>
+            <div style="margin-top:6px;"><span class="badge" id="vel_badge">—</span></div>
+          </div>
+          
+          <div class="result-block" id="block_hf">
+            <div class="result-row">
+              <span class="result-label">hf unitario</span>
+              <span class="result-value" id="hf_unit">—</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">hf total tubería</span>
+              <span class="result-value" id="hf_total">—</span>
+            </div>
+          </div>
+          
+          
+      <div class="result-block">
+        <div class="result-row">
+          <span class="result-label">Paso esfera mínimo</span>
+          <span class="result-value" id="paso">—</span>
+        </div>
+        <div class="formula">Sólidos esperados según caudal típico</div>
+      </div>
+          
+        </section>
+      </div>
+    </div>
+    
+    <div class="tab-panel" id="panel-teoria">
+      <div class="theory">
+        <h3>// Qué hace esta calculadora</h3>
+        <p>Esta herramienta es un <strong>análisis preliminar</strong> del sistema de bombeo. Calcula la potencia requerida, las pérdidas hidráulicas, la velocidad del fluido en la tubería y el tamaño de motor comercial recomendado. Está orientada específicamente a sistemas de tipo <strong>Sumergible vortex / canal abierto (paso de sólidos)</strong>.</p>
+        
+        <p>El usuario ingresa caudal deseado, alturas, geometría de tubería y características del fluido. La calculadora retorna en tiempo real todos los parámetros derivados, junto con una curva del sistema que muestra cómo varía el TDH requerido con el caudal.</p>
+        
+        <p><strong>No reemplaza el diseño definitivo</strong> que requiere curvas reales del fabricante de la bomba, análisis transitorio (golpe de ariete), selección detallada de accesorios y verificación de NPSH con valores de catálogo.</p>
+        
+        <h3>// Ecuación de potencia hidráulica</h3>
+        <p>La potencia que un fluido recibe al ser bombeado se deduce del trabajo necesario para elevar un peso a una altura por unidad de tiempo:</p>
+        
+        <div class="formula-block">
+          <div class="formula-name">Potencia hidráulica - sistema imperial</div>
+          <code>WHP = (Q × TDH × SG) / 3960</code>
+          <div class="formula-note">El factor 3960 = (60 s/min × 33000 ft·lb/min·HP) / 8.33 lb/gal · 1 / (1 ft³/7.48 gal). Combina la conversión de gpm a ft³/min, peso específico del agua (62.4 lb/ft³) y la definición de HP.</div>
+        </div>
+        
+        <div class="formula-block">
+          <div class="formula-name">Equivalente en SI</div>
+          <code>P_hid = ρ × g × Q × H</code>
+          <div class="formula-note">ρ densidad [kg/m³], g = 9.81 m/s², Q [m³/s], H [m]. Resultado en watts.</div>
+        </div>
+        
+        <h3>// Eficiencia y potencia al freno</h3>
+        <p>La bomba no transfiere toda la energía del eje al fluido. Hay pérdidas hidráulicas (fricción interna, recirculaciones), volumétricas (fugas internas) y mecánicas (rodamientos, sellos). La <strong>eficiencia global</strong> η relaciona la potencia hidráulica útil con la potencia al eje:</p>
+        
+        <div class="formula-block">
+          <div class="formula-name">Potencia al freno</div>
+          <code>BHP = WHP / η</code>
+          <div class="formula-note">η ≈ 0.75 es referencia conservadora. Bombas grandes (>500 HP) pueden alcanzar 0.82–0.88. Sanitarias vortex: 0.40–0.55.</div>
+        </div>
+        
+        <p><strong>Eficiencia real esperada para este tipo de bomba:</strong> 60–72% típico sanitario</p>
+        
+        <h3>// Factor de servicio (FS)</h3>
+        <p>El motor eléctrico debe entregar más potencia que la BHP calculada para cubrir variaciones de operación, picos transitorios, desgaste con el tiempo y el factor de servicio de diseño. Se aplica un factor entre 1.15 y 1.25:</p>
+        
+        <div class="formula-block">
+          <code>P_motor = BHP × FS</code>
+          <div class="formula-note">FS = 1.15 servicio continuo agua limpia · FS = 1.20 servicio general · FS = 1.25 condiciones severas, sanitario, arranques frecuentes.</div>
+        </div>
+        
+        <p>Luego se selecciona el motor comercial NEMA inmediatamente superior. Los tamaños estándar son: 1, 1.5, 2, 3, 5, 7.5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 125, 150, 200, 250, 300 HP, etc.</p>
+        
+        <h3>// Pérdidas por fricción - Hazen-Williams</h3>
+        <p>La ecuación de Hazen-Williams es una correlación empírica desarrollada en 1905 para agua a temperatura ambiente en tuberías. Es más simple que Darcy-Weisbach (no requiere iteración) y suficientemente precisa para diseño de sistemas de agua.</p>
+        
+        <div class="formula-block">
+          <div class="formula-name">Hazen-Williams - sistema imperial</div>
+          <code>hf = 0.2083 × (100/C)^1.852 × Q^1.852 / D^4.87 × (L/100)</code>
+          <div class="formula-note">hf en ft, Q en gpm, D en pulgadas, L en ft, C coeficiente adimensional del material.</div>
+        </div>
+        
+        <table class="var-table">
+          <tr><th>Material</th><th>C típico</th></tr>
+          <tr><td>PVC nuevo</td><td>150</td></tr>
+          <tr><td>HDPE</td><td>140</td></tr>
+          <tr><td>Concreto liso</td><td>130</td></tr>
+          <tr><td>Acero galvanizado nuevo</td><td>120</td></tr>
+          <tr><td>Acero usado (>10 años)</td><td>100</td></tr>
+          <tr><td>Hierro fundido viejo</td><td>80</td></tr>
+        </table>
+        
+        <p><strong>Limitación:</strong> Hazen-Williams es válida solo para agua o fluidos newtonianos similares en régimen turbulento (Re > 10⁴). Para fluidos viscosos, alta temperatura o aire, usar Darcy-Weisbach.</p>
+        
+        <h3>// Velocidad del fluido</h3>
+        <p>La velocidad en la tubería se calcula directamente de la continuidad:</p>
+        
+        <div class="formula-block">
+          <code>V = Q / A = 0.4085 × Q / D²</code>
+          <div class="formula-note">Conversión: V [ft/s] = (Q [gpm] / 7.48 gal/ft³ / 60 s/min) / (π·D²/4 [ft²]) con D en pulgadas. El factor combinado es 0.4085.</div>
+        </div>
+        
+        <p><strong>Rangos recomendados:</strong></p>
+        <ul>
+          <li><strong>3–7 ft/s:</strong> óptimo. Balance entre pérdidas razonables y diámetro económico.</li>
+          <li><strong>7–10 ft/s:</strong> aceptable para tramos cortos o tuberías de descarga.</li>
+          <li><strong>&gt; 10 ft/s:</strong> erosión, ruido, golpe de ariete severo. Subir diámetro.</li>
+          <li><strong>&lt; 3 ft/s:</strong> sedimentación de sólidos suspendidos. Reducir diámetro.</li>
+        </ul>
+        
+        <h3>// TDH (altura dinámica total)</h3>
+        <p>El TDH es la altura que debe vencer la bomba. Se compone de:</p>
+        
+        <div class="formula-block">
+          <code>TDH = H_estática + H_presión + Σ hf + H_velocidad</code>
+          <div class="formula-note">H_estática: diferencia geométrica entre niveles. H_presión: presión en descarga si descarga a tanque presurizado. Σhf: suma de pérdidas (tubería + accesorios). H_velocidad: V²/2g (usualmente despreciable, &lt;2% del total).</div>
+        </div>
+        
+        
+        <h4>Particularidades del bombeo sanitario</h4>
+        <p>Las aguas residuales contienen sólidos, fibras y materiales abrasivos. Las bombas estándar de agua limpia se obstruyen y se desgastan rápidamente. Se requieren bombas <strong>especializadas con paso de sólidos</strong>.</p>
+        
+        <h4>Tipos de impulsor</h4>
+        <ul>
+          <li><strong>Vortex (recesado):</strong> el impulsor está retraído de la carcasa. El sólido pasa por la carcasa sin tocar el impulsor. Eficiencia baja (40–55%) pero pasa sólidos grandes sin obstruirse.</li>
+          <li><strong>Canal cerrado (1–2 canales):</strong> mayor eficiencia (55–70%) pero paso de sólidos menor. Para aguas residuales pre-tratadas o ya tamizadas.</li>
+          <li><strong>Trituradoras (grinder):</strong> incorporan cuchillas que cortan los sólidos. Para residencial donde no hay tamizado previo.</li>
+        </ul>
+        
+        <h4>Velocidad mínima de autolimpieza</h4>
+        <div class="formula-block">
+          <code>V_mín ≥ 2 ft/s (≈0.6 m/s)</code>
+          <div class="formula-note">Si la velocidad cae por debajo de este umbral, los sólidos sedimentan y obstruyen progresivamente la tubería. Es un criterio más exigente que el sanitario común que se aplica a agua limpia (3 ft/s).</div>
+        </div>
+        
+        <h4>Factor de corrección por sólidos (K)</h4>
+        <p>El BHP teórico calculado con SG corregida no captura la pérdida adicional por presencia de sólidos suspendidos, fibras y aire arrastrado. Se aplica un factor K empírico:</p>
+        <div class="formula-block">
+          <code>BHP_real = BHP_teórico × K</code>
+          <div class="formula-note">K = 1.10 sanitario normal · 1.15 con basura no tamizada · 1.25 lodos espesados.</div>
+        </div>
+        
+        <h4>Paso de sólidos recomendado</h4>
+        <p>El diámetro mínimo de paso de la bomba debe permitir pasar objetos típicos del agua residual sin atascarse:</p>
+        <ul>
+          <li>Q &lt; 200 gpm: paso 2"</li>
+          <li>Q 200–500 gpm: paso 2.5–3"</li>
+          <li>Q 500–1500 gpm: paso 3–4"</li>
+          <li>Q &gt; 1500 gpm: paso 4" o mayor</li>
+        </ul>
+        
+        
+        <h3>// Curva del sistema</h3>
+        <p>La curva del sistema relaciona el TDH requerido con el caudal. Su forma es <strong>parabólica creciente</strong> porque las pérdidas crecen con Q^1.852 (Hazen-Williams). La intersección con la curva característica de la bomba (suministrada por el fabricante) define el <strong>punto de operación real</strong>.</p>
+        
+        <div class="formula-block">
+          <code>TDH(Q) = H_estática + K · Q^1.852</code>
+          <div class="formula-note">K constante que agrupa los términos de geometría y material. La curva graficada en esta calculadora muestra esta función para los parámetros ingresados.</div>
+        </div>
+        
+        <h3>// Referencias</h3>
+        <ul>
+          <li>Karassik et al. (2008) - <em>Pump Handbook</em>, 4ª ed., McGraw-Hill.</li>
+          <li>Hydraulic Institute Standards (ANSI/HI 9.6.1).</li>
+          <li>Streeter, V. & Wylie, E.B. - <em>Fluid Mechanics</em>.</li>
+          <li>AWWA Manual M11 - <em>Steel Water Pipe</em>.</li>
+          <li>Metcalf & Eddy - <em>Wastewater Engineering</em> (para sanitario).</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="tab-panel" id="panel-inverso">
+      <div class="theory" style="margin-bottom:18px;">
+        <h3>// Cálculo inverso: dado motor + tubería → Q máximo</h3>
+        <p>Este modo responde: <strong>"si ya tengo este motor instalado y esta tubería, ¿cuánto caudal puedo bombear como máximo?"</strong></p>
+        <p>El procedimiento es iterativo:</p>
+        <ol style="margin-left:24px;">
+          <li>Asume un Q de prueba.</li>
+          <li>Calcula TDH(Q) con la curva del sistema.</li>
+          <li>Calcula BHP requerido: BHP = Q · TDH · SG / (3960 · η).</li>
+          <li>Compara con BHP disponible del motor (P_motor / FS).</li>
+          <li>Ajusta Q hasta que coincidan.</li>
+        </ol>
+        <p>La búsqueda se hace por <strong>bisección</strong> entre Q = 1 gpm y Q = 2083 gpm con tolerancia 0.5 gpm.</p>
+      </div>
+      
+      <div class="calc-grid">
+        <section class="panel-input">
+          <h2>// Datos sistema instalado</h2>
+          
+          <div class="field">
+            <label>Motor instalado <span class="unit">[HP]</span> <span class="help-icon" data-help="inv_motor">?</span></label>
+            <input type="number" id="inv_motor" value="10" min="0.5" step="0.5">
+            <div class="formula" style="margin-top:6px;">Potencia en placa del motor</div>
+          </div>
+          
+          <div class="field-row">
+            <div class="field">
+              <label>H estática total <span class="unit">[ft]</span></label>
+              <input type="number" id="inv_Hest" value="200" min="0" step="1">
+            </div>
+            <div class="field">
+              <label>Long. tubería <span class="unit">[ft]</span></label>
+              <input type="number" id="inv_L" value="400" min="0" step="1">
+            </div>
+          </div>
+          
+          <div class="field-row">
+            <div class="field">
+              <label>Diámetro <span class="unit">[in]</span></label>
+              <select id="inv_D">
+            <option value="3">3"</option>
+            <option value="4">4"</option>
+            <option value="6">6"</option>
+            <option value="8" selected >8"</option>
+            <option value="10">10"</option>
+            <option value="12">12"</option></select>
+            </div>
+            <div class="field">
+              <label>Material C</label>
+              <select id="inv_C">
+            <option value="150">PVC nuevo · 150</option>
+            <option value="140" selected>HDPE · 140</option>
+            <option value="120">Acero galv. · 120</option>
+            <option value="100">Acero usado · 100</option></select>
+            </div>
+          </div>
+          
+          <div class="slider-field">
+            <label><span>Eficiencia η bomba</span><span class="slider-val"><span id="inv_eta_val">65</span>%</span></label>
+            <input type="range" id="inv_eta" value="65" min="40" max="80" step="1">
+          </div>
+          
+          <div class="slider-field">
+            <label><span>Factor servicio motor</span><span class="slider-val" id="inv_fs_val">1.25</span></label>
+            <input type="range" id="inv_FS" value="1.25" min="1.00" max="1.50" step="0.05">
+          </div>
+          
+          <div class="slider-field">
+            <label><span>SG</span><span class="slider-val" id="inv_sg_val">1.02</span></label>
+            <input type="range" id="inv_SG" value="1.02" min="0.95" max="1.15" step="0.01">
+          </div>
+          
+          <div class="footer-note">
+            <strong>// MÉTODO:</strong> bisección numérica. Converge en menos de 30 iteraciones. Si el motor es demasiado pequeño para la H_estática, Q resultante puede ser cero (motor incapaz de vencer H).
+          </div>
+        </section>
+        
+        <section class="panel-output">
+          <h2>// Capacidad máxima</h2>
+          
+          <div class="result-block main">
+            <div class="result-row">
+              <span class="result-label">Caudal máximo posible</span>
+              <span class="result-value big warn" id="inv_Qmax">—</span>
+            </div>
+            <div class="formula">Q que satura el motor disponible</div>
+          </div>
+          
+          <div class="result-block">
+            <div class="result-row">
+              <span class="result-label">TDH a Q máximo</span>
+              <span class="result-value" id="inv_tdh">—</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">BHP disponible</span>
+              <span class="result-value" id="inv_bhp_disp">—</span>
+            </div>
+            <div class="formula">P_motor / FS</div>
+            <div class="result-row">
+              <span class="result-label">BHP requerido a Q max</span>
+              <span class="result-value" id="inv_bhp_req">—</span>
+            </div>
+            <div class="formula">Q · TDH · SG / (3960·η)</div>
+            <div class="divider"></div>
+            <div class="result-row">
+              <span class="result-label">Velocidad resultante</span>
+              <span class="result-value" id="inv_vel">—</span>
+            </div>
+            <div style="margin-top:6px;"><span class="badge" id="inv_vel_badge">—</span></div>
+            <div class="result-row">
+              <span class="result-label">hf total</span>
+              <span class="result-value" id="inv_hf">—</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Iteraciones</span>
+              <span class="result-value" id="inv_iter">—</span>
+            </div>
+          </div>
+          
+          <div class="result-block" id="inv_diag">
+            <div class="result-row">
+              <span class="result-label">Diagnóstico</span>
+            </div>
+            <div id="inv_msg" style="font-size:13px; margin-top:6px; line-height:1.5;"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <div class="lmm">LMM INGENIERÍA</div>
+    <div>Calculadora preliminar de bombas — Documento 03 v2.1</div>
+    <div class="disclaimer">
+      Herramienta de prediseño. Para diseño definitivo usar curvas reales del fabricante.<br>
+      Verificar siempre NPSH disponible vs requerido. Aplicar normativa local vigente.
+    </div>
+  </footer>
+</div>
+
+<!-- Modal ayuda -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" id="modal-close">×</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+<script>
+
+const D = id => document.getElementById(id);
+const NEMA = [1, 1.5, 2, 3, 5, 7.5, 10, 15, 20, 25, 30, 40, 50, 60, 75,
+              100, 125, 150, 200, 250, 300, 350, 400, 500, 600, 700, 800,
+              900, 1000, 1250, 1500, 2000, 2500, 3000];
+const COLOR = { c: '#4A90C4', cOsc: '#1E3A5F',
+                 tinta: '#1a1a1a', gris: '#888', red: '#d32f2f' };
+
+// === SISTEMA DE AYUDAS (MODAL) ===
+const HELP = {
+  'Q': { titulo: `Caudal (Q)`, contenido: `            <p><strong>Qué es:</strong> volumen de agua que la bomba debe entregar por unidad de tiempo.</p>            <p><strong>Unidad:</strong> galones por minuto (gpm).</p>            <p><strong>Cómo determinarlo:</strong></p>            <ul>              <li><strong>Para abastecimiento:</strong> población × dotación (L/persona/día) × factor de mayoración (1.5–2.0 para caudal máximo horario).</li>              <li><strong>Para riego:</strong> área × demanda evapotranspiración.</li>              <li><strong>Para sanitario:</strong> caudal pico hora-punta de la red colectora.</li>            </ul>            <div class="ejemplo">              <strong>Ejemplo:</strong> Comunidad de 500 personas, dotación 150 L/p/día, factor 1.8:<br>              Q = 500 × 150 × 1.8 / (24 × 60) = 93.75 L/min ≈ <strong>25 gpm</strong>            </div>        ` },
+  'Hpozo': { titulo: `Profundidad dinámica del pozo`, contenido: `            <p><strong>Qué es:</strong> distancia vertical desde la <em>boca del pozo</em> (terreno) hasta el <em>nivel del agua mientras la bomba opera</em>.</p>            <p>No es lo mismo que la profundidad total del pozo. El agua baja al bombearse (efecto llamado <strong>abatimiento</strong> o cono de depresión).</p>            <p><strong>Cómo medirlo:</strong></p>            <ul>              <li>Sonda de nivel mientras la bomba está operando a régimen.</li>              <li>O sumar: nivel estático (NE) + abatimiento (S) reportado en la prueba de pozo.</li>            </ul>            <div class="diagram">              <svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" style="font-family:Arial;font-size:11px;">                <!-- terreno -->                <rect x="0" y="40" width="320" height="20" fill="#8d6e63"/>                <line x1="0" y1="40" x2="320" y2="40" stroke="#5d4037" stroke-width="2"/>                <text x="10" y="35" fill="#5d4037">Terreno (boca pozo)</text>                <!-- pozo -->                <rect x="130" y="40" width="60" height="180" fill="#bdbdbd" opacity="0.3"/>                <line x1="130" y1="40" x2="130" y2="220" stroke="#424242" stroke-width="2"/>                <line x1="190" y1="40" x2="190" y2="220" stroke="#424242" stroke-width="2"/>                <!-- nivel estatico -->                <line x1="130" y1="100" x2="190" y2="100" stroke="#0288d1" stroke-width="1" stroke-dasharray="4,3"/>                <text x="195" y="103" fill="#0288d1">NE (estático)</text>                <!-- nivel dinamico -->                <line x1="130" y1="160" x2="190" y2="160" stroke="#01579b" stroke-width="2.5"/>                <rect x="130" y="160" width="60" height="60" fill="#0277bd" opacity="0.5"/>                <text x="195" y="163" fill="#01579b" font-weight="bold">ND (operando)</text>                <!-- bomba -->                <rect x="145" y="195" width="30" height="22" fill="#c62828"/>                <text x="200" y="210" fill="#c62828">Bomba</text>                <!-- flecha medida -->                <line x1="80" y1="40" x2="80" y2="160" stroke="#d32f2f" stroke-width="2" marker-end="url(#arr)" marker-start="url(#arr)"/>                <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><polygon points="0,0 8,4 0,8" fill="#d32f2f"/></marker></defs>                <text x="20" y="105" fill="#d32f2f" font-weight="bold">H_pozo</text>                <text x="20" y="118" fill="#d32f2f">dinámica</text>              </svg>            </div>            <div class="ejemplo">              <strong>Ejemplo:</strong> Pozo con NE = 20 m, abatimiento al bombear = 8 m:<br>              H_pozo dinámica = 28 m × 3.28 = <strong>92 ft</strong>            </div>        ` },
+  'Htanque': { titulo: `Altura del tanque`, contenido: `            <p><strong>Qué es:</strong> distancia vertical desde la <em>boca del pozo</em> (o nivel del terreno donde sale el agua) hasta el <em>nivel del agua dentro del tanque elevado</em> de destino.</p>            <p>Si el tanque está al mismo nivel del pozo: 0 ft.<br>            Si el tanque está en una loma a 30 m sobre el pozo: 100 ft.</p>            <p><strong>Cuidado:</strong> mide hasta la <strong>entrada superior del tanque</strong> (rebosadero), no hasta su base. La bomba debe poder llenar el tanque hasta su nivel máximo.</p>            <div class="ejemplo">              <strong>Ejemplo:</strong> Pozo a cota 100 m, tanque elevado en cota 145 m (su base) y altura tanque 5 m:<br>              H_tanque = (145 + 5) − 100 = 50 m = <strong>164 ft</strong>            </div>        ` },
+  'Hest': { titulo: `Altura estática`, contenido: `            <p><strong>Qué es:</strong> diferencia <em>vertical</em> entre el nivel del agua en la fuente (succión) y el nivel del agua en el destino (descarga).</p>            <p>Es lo que la bomba debería vencer aunque no hubiera tubería ni fricción. Solo geometría.</p>            <div class="diagram">              <svg viewBox="0 0 360 220" xmlns="http://www.w3.org/2000/svg" style="font-family:Arial;font-size:11px;">                <!-- fuente -->                <rect x="20" y="140" width="80" height="50" fill="#0277bd" opacity="0.5"/>                <line x1="20" y1="140" x2="100" y2="140" stroke="#01579b" stroke-width="2"/>                <text x="30" y="135" fill="#01579b" font-weight="bold">FUENTE</text>                <text x="30" y="170" fill="white" font-size="10">Río/Toma</text>                <!-- bomba -->                <rect x="115" y="155" width="35" height="25" fill="#c62828"/>                <text x="115" y="195" fill="#c62828" font-size="10">Bomba</text>                <!-- tubería sube -->                <line x1="150" y1="167" x2="250" y2="167" stroke="#616161" stroke-width="3"/>                <line x1="250" y1="167" x2="250" y2="60" stroke="#616161" stroke-width="3"/>                <line x1="250" y1="60" x2="290" y2="60" stroke="#616161" stroke-width="3"/>                <!-- tanque destino -->                <rect x="290" y="40" width="60" height="60" fill="#0277bd" opacity="0.5"/>                <line x1="290" y1="40" x2="350" y2="40" stroke="#01579b" stroke-width="2"/>                <text x="295" y="35" fill="#01579b" font-weight="bold">DESTINO</text>                <text x="295" y="75" fill="white" font-size="10">Tanque</text>                <!-- medida vertical -->                <line x1="180" y1="140" x2="180" y2="40" stroke="#d32f2f" stroke-width="2" marker-end="url(#arr2)" marker-start="url(#arr2)"/>                <defs><marker id="arr2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><polygon points="0,0 8,4 0,8" fill="#d32f2f"/></marker></defs>                <text x="190" y="90" fill="#d32f2f" font-weight="bold">H estática</text>                <!-- terreno -->                <line x1="0" y1="200" x2="360" y2="200" stroke="#5d4037" stroke-width="2"/>              </svg>            </div>            <p><strong>Importante:</strong> la <em>altura estática</em> no depende del caudal, del diámetro, ni del material. Solo cambia si mueves la fuente o el destino.</p>            <p><strong>Si la fuente está más alta que el destino</strong> (gravedad ayuda): H_est = 0 o negativo (no se requiere bombeo, salvo para vencer fricción).</p>            <div class="ejemplo">              <strong>Ejemplo:</strong> Toma en río cota 50 m, tanque destino cota 170 m:<br>              H_est = (170 − 50) × 3.28 = <strong>394 ft</strong>            </div>        ` },
+  'Hs': { titulo: `Altura de succión (Hs)`, contenido: `            <p><strong>Qué es:</strong> distancia <em>vertical</em> entre el <em>eje de la bomba</em> y el <em>nivel del agua en la fuente</em>.</p>            <p>Convención de signos:</p>            <ul>              <li><strong>Hs positivo:</strong> bomba está <em>arriba</em> del agua (succiona contra gravedad). Caso crítico para cavitación.</li>              <li><strong>Hs negativo:</strong> bomba está <em>debajo</em> del agua (sumergida o "ahogada"). NPSH mejora.</li>              <li><strong>Hs = 0:</strong> bomba al mismo nivel del agua.</li>            </ul>            <div class="diagram">              <svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg" style="font-family:Arial;font-size:11px;">                <!-- caso bomba arriba (Hs+) -->                <text x="80" y="20" fill="#01579b" font-weight="bold">Hs POSITIVO</text>                <rect x="20" y="120" width="120" height="80" fill="#0277bd" opacity="0.4"/>                <line x1="20" y1="120" x2="140" y2="120" stroke="#01579b" stroke-width="2"/>                <line x1="60" y1="120" x2="60" y2="80" stroke="#757575" stroke-width="2"/>                <rect x="50" y="50" width="40" height="30" fill="#c62828"/>                <text x="92" y="68" fill="#c62828" font-size="10">Bomba</text>                <!-- flecha Hs -->                <line x1="115" y1="65" x2="115" y2="120" stroke="#d32f2f" stroke-width="2" marker-start="url(#arr3)" marker-end="url(#arr3)"/>                <defs><marker id="arr3" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><polygon points="0,0 8,4 0,8" fill="#d32f2f"/></marker></defs>                <text x="120" y="95" fill="#d32f2f" font-weight="bold">Hs (+)</text>                                <!-- caso bomba sumergida (Hs-) -->                <text x="195" y="20" fill="#01579b" font-weight="bold">Hs NEGATIVO</text>                <rect x="180" y="60" width="120" height="140" fill="#0277bd" opacity="0.4"/>                <line x1="180" y1="60" x2="300" y2="60" stroke="#01579b" stroke-width="2"/>                <rect x="220" y="130" width="40" height="30" fill="#c62828"/>                <text x="265" y="148" fill="#c62828" font-size="10">Bomba</text>                <!-- flecha Hs negativa -->                <line x1="195" y1="60" x2="195" y2="145" stroke="#2e7d32" stroke-width="2" marker-start="url(#arr4)" marker-end="url(#arr4)"/>                <defs><marker id="arr4" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><polygon points="0,0 8,4 0,8" fill="#2e7d32"/></marker></defs>                <text x="155" y="105" fill="#2e7d32" font-weight="bold">Hs (−)</text>              </svg>            </div>            <p><strong>Regla práctica:</strong> Hs &gt; 15 ft es problemático. Hs &gt; 20 ft casi imposible sin cavitar.</p>        ` },
+  'Ls': { titulo: `Longitud de succión`, contenido: `            <p><strong>Qué es:</strong> longitud del tubo de <em>succión</em> (entre la fuente y la entrada de la bomba). NO incluye la tubería de descarga.</p>            <p>Aplica solo cuando la bomba está fuera del agua y tiene una tubería que succiona.</p>            <p>Las pérdidas en succión son <strong>críticas para NPSH</strong>: cada pie de tubería de succión reduce el NPSH disponible.</p>            <div class="ejemplo">              <strong>Recomendación:</strong> mantener la succión lo más corta posible. Idealmente Ls &lt; 5 m. Si requiere mayor distancia, usar diámetro mayor en succión para reducir fricción.            </div>        ` },
+  'Pdesc': { titulo: `Presión de descarga`, contenido: `            <p><strong>Qué es:</strong> presión adicional <em>requerida</em> en el punto donde termina la tubería (si descarga a un tanque atmosférico abierto: 0 psi).</p>            <p>Casos típicos donde sí aplica:</p>            <ul>              <li><strong>Descarga a línea presurizada:</strong> la presión de la red en ese punto.</li>              <li><strong>Tanque hidroneumático:</strong> presión de operación (típico 40–60 psi).</li>              <li><strong>Sistema de riego por aspersores:</strong> presión requerida en los aspersores (20–60 psi).</li>            </ul>            <p>La calculadora convierte automáticamente psi a ft (1 psi ≈ 2.31 ft de agua).</p>        ` },
+  'L': { titulo: `Longitud de tubería`, contenido: `            <p><strong>Qué es:</strong> longitud <em>real</em> de la tubería desde la salida de la bomba hasta el punto de descarga.</p>            <p>Si la tubería sube, baja y se desvía, sigue el recorrido del tubo, no la distancia en línea recta.</p>            <p><strong>Pérdidas en accesorios:</strong> codos, válvulas, T's, reducciones. Equivalencia rápida:</p>            <ul>              <li>Codo 90°: ≈ 30 diámetros de tubería recta</li>              <li>Válvula de compuerta abierta: ≈ 8 D</li>              <li>Válvula check: ≈ 100 D</li>              <li>T (paso directo): ≈ 20 D</li>            </ul>            <div class="ejemplo">              <strong>Práctica común:</strong> añadir 10–20% extra a la longitud real para compensar accesorios en cálculo preliminar.<br>              Ejemplo: tubería de 1000 ft con muchos accesorios → ingresar 1200 ft.            </div>        ` },
+  'D': { titulo: `Diámetro de tubería`, contenido: `            <p><strong>Qué es:</strong> diámetro <em>interno nominal</em> de la tubería. Se ingresa en pulgadas.</p>            <p><strong>Cómo elegirlo:</strong></p>            <ul>              <li>Si el caudal es fijo, ajusta el diámetro hasta que la <strong>velocidad caiga en zona verde</strong> (3–7 ft/s).</li>              <li>Diámetro pequeño = más fricción = más HP requerido pero menos costo de tubería.</li>              <li>Diámetro grande = menos fricción = menos HP pero más costo. Punto óptimo económico depende de horas de operación y costo energía.</li>            </ul>            <p><strong>Regla de oro:</strong> en bombeo continuo, sobredimensionar diámetro suele compensar en pocos años por ahorro eléctrico.</p>        ` },
+  'C': { titulo: `Coeficiente C (Hazen-Williams)`, contenido: `            <p><strong>Qué es:</strong> número adimensional que indica la <em>rugosidad relativa</em> del material. Más alto = más liso = menos fricción.</p>            <p><strong>Tabla rápida:</strong></p>            <ul>              <li>PVC nuevo: <strong>150</strong></li>              <li>HDPE / polietileno: <strong>140</strong></li>              <li>Concreto liso: <strong>130</strong></li>              <li>Acero galvanizado nuevo: <strong>120</strong></li>              <li>Acero usado (10+ años): <strong>100</strong></li>              <li>Hierro fundido viejo: <strong>80</strong></li>            </ul>            <p><strong>Importante:</strong> el coeficiente <em>baja con el tiempo</em> por incrustaciones, corrosión y biopelícula. Para diseño usar valor conservador (C usado, no nuevo) si la tubería operará muchos años.</p>        ` },
+  'eta': { titulo: `Eficiencia (η)`, contenido: `            <p><strong>Qué es:</strong> fracción de la energía del motor que efectivamente se transfiere al agua. Si η = 75%, eso significa que el 25% se pierde como calor (fricción interna, fugas, sellos).</p>            <p><strong>Cómo elegir:</strong></p>            <ul>              <li><strong>Desconoce la bomba específica:</strong> usar η = 70–75% (conservador).</li>              <li><strong>Bomba premium grande (&gt;500 HP):</strong> 82–88%.</li>              <li><strong>Sumergible pozo profundo:</strong> 65–75%.</li>              <li><strong>Sanitaria vortex:</strong> 40–55%.</li>              <li><strong>Bomba con curva fabricante:</strong> usar el valor en el punto de operación real (no el pico).</li>            </ul>            <p>Si elige una η optimista y resulta ser menor, la bomba <strong>no entrega el caudal esperado</strong>. Mejor pecar de conservador.</p>        ` },
+  'FS': { titulo: `Factor de servicio (FS)`, contenido: `            <p><strong>Qué es:</strong> margen entre la potencia al freno (BHP) y la potencia del motor seleccionado. Cubre variaciones operativas, picos transitorios y desgaste.</p>            <p><strong>Valores típicos:</strong></p>            <ul>              <li><strong>FS = 1.15:</strong> servicio continuo agua limpia, condiciones estables.</li>              <li><strong>FS = 1.20:</strong> servicio general (recomendado por defecto).</li>              <li><strong>FS = 1.25:</strong> condiciones severas, sanitario, arranques frecuentes, ambiente abrasivo.</li>              <li><strong>FS = 1.30+:</strong> aplicaciones críticas con redundancia limitada.</li>            </ul>            <p><strong>P_motor = BHP × FS</strong>, luego se redondea al motor NEMA siguiente.</p>        ` },
+  'SG': { titulo: `Gravedad específica (SG)`, contenido: `            <p><strong>Qué es:</strong> densidad del fluido respecto al agua (SG = 1.0 para agua a 20°C).</p>            <p>Si bombeas algo más denso que agua, requieres más HP a igual caudal y altura, porque BHP = Q · TDH · <strong>SG</strong> / (3960 · η).</p>            <p><strong>Valores típicos:</strong></p>            <ul>              <li>Agua limpia: <strong>1.00</strong></li>              <li>Agua residual cruda: <strong>1.02</strong></li>              <li>Agua salada (mar): <strong>1.025</strong></li>              <li>Lodos sanitarios 5% sólidos: <strong>1.05</strong></li>              <li>Diesel: 0.85</li>            </ul>            <p>Para fluidos con SG &gt; 1.10 o muy viscosos, esta calculadora pierde precisión. Usar software especializado.</p>        ` },
+  'altitud': { titulo: `Altitud del sitio`, contenido: `            <p><strong>Por qué importa:</strong> la presión atmosférica disminuye con la altitud (≈1 psi por cada 800 m). Esto reduce el NPSH disponible y hace más fácil que la bomba cavite.</p>            <p><strong>Tabla Panamá:</strong></p>            <ul>              <li>Costa / nivel mar: <strong>14.7 psi</strong></li>              <li>Panamá ciudad (50 m): <strong>14.6 psi</strong></li>              <li>David, Chiriquí (60 m): <strong>14.6 psi</strong></li>              <li>Boquete (1200 m): <strong>13.3 psi</strong></li>              <li>Volcán / Cerro Punta (1800 m): <strong>12.8 psi</strong></li>            </ul>            <p>Si no encuentras tu sitio exacto, usa la opción más cercana en altitud.</p>        ` },
+  'K': { titulo: `Factor corrección sólidos (K)`, contenido: `            <p><strong>Qué es:</strong> factor multiplicador que aumenta la BHP calculada para compensar la presencia de sólidos suspendidos, fibras, gases y aire arrastrado en aguas residuales.</p>            <p>La fórmula básica BHP = Q·TDH·SG/(3960·η) asume fluido limpio. Pero en sanitario hay pérdidas adicionales no capturadas que se modelan empíricamente con este factor.</p>            <p><strong>Valores:</strong></p>            <ul>              <li><strong>K = 1.00:</strong> agua limpia (no aplica corrección).</li>              <li><strong>K = 1.10:</strong> sanitario normal residencial (sólidos típicos).</li>              <li><strong>K = 1.15:</strong> sanitario con basura no tamizada, telas, plásticos.</li>              <li><strong>K = 1.25:</strong> lodos espesados, alta concentración de sólidos.</li>            </ul>        ` },
+  'inv_motor': { titulo: `Motor instalado`, contenido: `            <p><strong>Qué es:</strong> potencia nominal en placa del motor que ya tienes (o que planeas usar). Se lee directamente del motor.</p>            <p>La calculadora descontará el factor de servicio para obtener la BHP realmente disponible para impulsar la bomba:</p>            <p style="text-align:center;"><strong>BHP_disponible = P_motor / FS</strong></p>            <p>Con esa BHP disponible se busca el caudal máximo posible iterativamente.</p>        ` }
+};
+
+const overlay = D('modal-overlay');
+const modalContent = D('modal-content');
+
+function showHelp(key) {
+  const help = HELP[key];
+  if (!help) return;
+  modalContent.innerHTML = '<h3>' + help.titulo + '</h3>' + help.contenido;
+  overlay.classList.add('active');
+}
+function closeHelp() { overlay.classList.remove('active'); }
+
+D('modal-close').addEventListener('click', closeHelp);
+overlay.addEventListener('click', e => { if (e.target === overlay) closeHelp(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHelp(); });
+document.querySelectorAll('.help-icon').forEach(icon => {
+  icon.addEventListener('click', e => {
+    e.stopPropagation();
+    showHelp(icon.dataset.help);
+  });
+});
+
+// === TABS ===
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    D('panel-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'calc') requestAnimationFrame(() => calc());
+  });
+});
+
+// === CALCULO SISTEMA ===
+function calcHfHW(Q, D_in, C, L) {
+  return 0.2083 * Math.pow(100/C, 1.852) * Math.pow(Q, 1.852) / Math.pow(D_in, 4.87) * (L/100);
+}
+
+function calcSys(Q, params) {
+  const hf_unit = calcHfHW(Q, params.D, params.C, 100);
+  const hf_total = calcHfHW(Q, params.D, params.C, params.L);
+  const Hpres_ft = params.Pdesc * 2.31 / params.SG; const Hest = params.Hest + Hpres_ft;
+  const TDH = Hest + hf_total;
+  return { TDH, hf_unit, hf_total, Hest };
+}
+
+// === GRAFICA (fix movil con ResizeObserver) ===
+function drawCurva(Qop, params) {
+  const cv = D('chart');
+  if (!cv || cv.offsetParent === null) return;  // no dibujar si no visible
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const contW = cv.parentElement.clientWidth - 24;  // padding interno
+  const W = Math.max(280, contW);
+  const H = Math.min(300, Math.max(200, W * 0.55));
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.width = W + 'px';
+  cv.style.height = H + 'px';
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr, dpr);
+  
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, W, H);
+  
+  const m = { l: 55, r: 15, t: 15, b: 35 };
+  const cw = W - m.l - m.r, ch = H - m.t - m.b;
+  
+  const Qmin = Math.max(1, Qop * 0.4);
+  const Qmax = Math.max(Qop * 1.8, Qop + 10);
+  
+  const pts = [];
+  const step = (Qmax - Qmin) / 80;
+  for (let q = Qmin; q <= Qmax; q += step) {
+    pts.push({ q, tdh: calcSys(q, params).TDH });
+  }
+  const tdhMax = Math.max(...pts.map(p => p.tdh)) * 1.1;
+  const tdhMin = Math.max(0, Math.min(...pts.map(p => p.tdh)) * 0.9);
+  
+  const X = q => m.l + (q - Qmin) / (Qmax - Qmin) * cw;
+  const Y = t => m.t + ch - (t - tdhMin) / (tdhMax - tdhMin) * ch;
+  
+  // Grid
+  ctx.strokeStyle = '#eee';
+  ctx.lineWidth = 1;
+  ctx.font = '10px "Courier New", monospace';
+  ctx.fillStyle = COLOR.gris;
+  
+  const xTicks = [Qmin, Qmin + (Qmax-Qmin)*0.25, (Qmin+Qmax)*0.5,
+                   Qmin + (Qmax-Qmin)*0.75, Qmax];
+  xTicks.forEach(q => {
+    const x = X(q);
+    ctx.beginPath(); ctx.moveTo(x, m.t); ctx.lineTo(x, m.t + ch); ctx.stroke();
+    ctx.fillText(q.toFixed(0), x - 12, m.t + ch + 13);
+  });
+  for (let i = 0; i <= 4; i++) {
+    const v = tdhMin + (tdhMax - tdhMin) * i / 4;
+    const y = Y(v);
+    ctx.beginPath(); ctx.moveTo(m.l, y); ctx.lineTo(m.l + cw, y); ctx.stroke();
+    ctx.fillText(v.toFixed(0), 8, y + 3);
+  }
+  
+  // Ejes
+  ctx.strokeStyle = COLOR.tinta;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(m.l, m.t); ctx.lineTo(m.l, m.t + ch);
+  ctx.lineTo(m.l + cw, m.t + ch); ctx.stroke();
+  
+  // Curva
+  ctx.strokeStyle = COLOR.c;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(X(p.q), Y(p.tdh));
+    else ctx.lineTo(X(p.q), Y(p.tdh));
+  });
+  ctx.stroke();
+  
+  // H estatica
+  const Hest_g = calcSys(Qmin, params).Hest;
+  if (Hest_g >= tdhMin && Hest_g <= tdhMax) {
+    ctx.strokeStyle = COLOR.gris;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(m.l, Y(Hest_g)); ctx.lineTo(m.l + cw, Y(Hest_g));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillText('H_est', m.l + cw - 35, Y(Hest_g) - 3);
+  }
+  
+  // Punto operacion
+  if (Qop >= Qmin && Qop <= Qmax) {
+    const op = calcSys(Qop, params);
+    const px = X(Qop), py = Y(op.TDH);
+    ctx.strokeStyle = COLOR.red;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(px, m.t + ch); ctx.lineTo(px, py);
+    ctx.lineTo(m.l, py); ctx.stroke();
+    ctx.setLineDash([]);
+    
+    ctx.fillStyle = COLOR.red;
+    ctx.beginPath();
+    ctx.arc(px, py, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    ctx.fillStyle = '#fff8e1';
+    ctx.strokeStyle = COLOR.red;
+    ctx.lineWidth = 1.5;
+    const tw = 115, th = 28;
+    const tx = Math.min(px + 10, W - tw - 5);
+    const ty = Math.max(py - 32, m.t);
+    ctx.fillRect(tx, ty, tw, th);
+    ctx.strokeRect(tx, ty, tw, th);
+    ctx.fillStyle = COLOR.tinta;
+    ctx.font = 'bold 10px "Courier New", monospace';
+    ctx.fillText('Q=' + Qop + ' gpm', tx + 5, ty + 12);
+    ctx.fillText('TDH=' + op.TDH.toFixed(0) + ' ft', tx + 5, ty + 23);
+  }
+  
+  // Labels
+  ctx.fillStyle = COLOR.cOsc;
+  ctx.font = 'bold 11px "Courier New", monospace';
+  ctx.fillText('Q [gpm]', m.l + cw/2 - 25, H - 4);
+  ctx.save();
+  ctx.translate(13, m.t + ch/2 + 25);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('TDH [ft]', 0, 0);
+  ctx.restore();
+}
+
+// === CALCULO PRINCIPAL ===
+function calc() {
+  const Q = +D('Q').value;
+  const params = {
+    Hest: +D('Hest').value, Pdesc: +D('Pdesc').value,
+    L: +D('L').value,
+    D: +D('D').value,
+    C: +D('C').value,
+    SG: +D('SG').value,
+  };
+  const eta = +D('eta').value / 100;
+  const FS = +D('FS').value;
+  
+  D('eta_val').textContent = (eta*100).toFixed(0);
+  D('fs_val').textContent = FS.toFixed(2);
+  D('sg_val').textContent = params.SG.toFixed(2);
+  
+  const V = 0.4085 * Q / (params.D * params.D);
+  const sys = calcSys(Q, params);
+  
+  const WHP = Q * sys.TDH * params.SG / 3960;
+  const BHP = WHP / eta;
+  const K = +D('K').value;
+  const BHP_corr = BHP * K;
+  const Pmotor = BHP_corr * FS;
+  const motor = NEMA.find(m => m >= Pmotor) || NEMA[NEMA.length - 1];
+  
+  D('tdh').textContent = sys.TDH.toFixed(1) + ' ft';
+  D('whp').textContent = WHP.toFixed(1) + ' HP';
+  D('bhp').textContent = BHP.toFixed(1) + ' HP';
+  D('pmotor').textContent = Pmotor.toFixed(1) + ' HP';
+  D('motor_nema').textContent = motor + ' HP';
+  D('formula_motor').textContent = Pmotor.toFixed(1) + ' HP → NEMA siguiente: ' + motor + ' HP';
+  D('vel').textContent = V.toFixed(2) + ' ft/s';
+  D('hf_unit').textContent = sys.hf_unit.toFixed(2) + ' ft/100ft';
+  D('hf_total').textContent = sys.hf_total.toFixed(1) + ' ft';
+  
+  
+  D('bhp_corr').textContent = BHP_corr.toFixed(1) + ' HP';
+  let paso;
+  if (Q < 200) paso = '2"';
+  else if (Q < 500) paso = '2.5–3"';
+  else if (Q < 1500) paso = '3–4"';
+  else paso = '4" o mayor';
+  D('paso').textContent = paso;
+  const MGD = Q / 694.4;
+  const m3h = Q * 0.2271;
+  const Ls_conv = Q * 0.0631;
+  D('conv_Q').textContent = MGD.toFixed(3) + ' MGD · ' + m3h.toFixed(0) + ' m³/h · ' + Ls_conv.toFixed(1) + ' L/s';
+
+  
+  // Velocidad badge
+  const badge = D('vel_badge');
+  const blockV = D('block_v');
+  blockV.className = 'result-block';
+  const isSan = true;
+  if (isSan) {
+    if (V < 2) { badge.textContent = '✗ <2 ft/s SEDIMENTA'; badge.className = 'badge alert'; blockV.classList.add('alert'); }
+    else if (V < 3) { badge.textContent = '⚠ Min autolimpieza'; badge.className = 'badge warn'; }
+    else if (V <= 7) { badge.textContent = '✓ ÓPTIMO sanitario'; badge.className = 'badge ok'; blockV.classList.add('ok'); }
+    else if (V <= 10) { badge.textContent = '⚠ ACEPTABLE'; badge.className = 'badge warn'; }
+    else { badge.textContent = '✗ EROSIÓN'; badge.className = 'badge alert'; blockV.classList.add('alert'); }
+  } else {
+    if (V >= 3 && V <= 7) { badge.textContent = '✓ ÓPTIMO (3–7 ft/s)'; badge.className = 'badge ok'; blockV.classList.add('ok'); }
+    else if (V > 7 && V <= 10) { badge.textContent = '⚠ ACEPTABLE (7–10 ft/s)'; badge.className = 'badge warn'; }
+    else if (V > 10) { badge.textContent = '✗ EROSIÓN — subir D'; badge.className = 'badge alert'; blockV.classList.add('alert'); }
+    else { badge.textContent = '⚠ SEDIMENTA — bajar D'; badge.className = 'badge warn'; }
+  }
+  
+  const blockHf = D('block_hf');
+  blockHf.className = 'result-block';
+  if (sys.hf_unit > 10) blockHf.classList.add('alert');
+  else if (sys.hf_unit < 1) blockHf.classList.add('warn');
+  else blockHf.classList.add('ok');
+  
+  drawCurva(Q, params);
+}
+
+// === CALCULO INVERSO (biseccion) ===
+function calcInverso() {
+  const Pmotor = +D('inv_motor').value;
+  const Hest = +D('inv_Hest').value;
+  const L = +D('inv_L').value;
+  const Din = +D('inv_D').value;
+  const C = +D('inv_C').value;
+  const eta = +D('inv_eta').value / 100;
+  const FS = +D('inv_FS').value;
+  const SG = +D('inv_SG').value;
+  
+  D('inv_eta_val').textContent = (eta*100).toFixed(0);
+  D('inv_fs_val').textContent = FS.toFixed(2);
+  D('inv_sg_val').textContent = SG.toFixed(2);
+  
+  const BHP_disp = Pmotor / FS;
+  
+  // Biseccion: f(Q) = BHP_req(Q) - BHP_disp
+  const bhpReq = Q => {
+    const hf = calcHfHW(Q, Din, C, L);
+    const TDH = Hest + hf;
+    return Q * TDH * SG / (3960 * eta);
+  };
+  
+  let Qlo = 0.001, Qhi = 2083;
+  let iter = 0;
+  let Qsol = 0;
+  
+  // Verificar si motor es suficiente para Hest sin caudal
+  if (bhpReq(0.001) > BHP_disp + 100) {
+    // raro: BHP a Q->0 deberia tender a 0
+  }
+  // Si en Qhi BHP_req < BHP_disp, no satura -> Qmax es Qhi
+  if (bhpReq(Qhi) < BHP_disp) {
+    Qsol = Qhi;
+  } else {
+    while (Qhi - Qlo > 0.5 && iter < 50) {
+      const Qmid = (Qlo + Qhi) / 2;
+      if (bhpReq(Qmid) > BHP_disp) Qhi = Qmid;
+      else Qlo = Qmid;
+      iter++;
+    }
+    Qsol = (Qlo + Qhi) / 2;
+  }
+  
+  const hf = calcHfHW(Qsol, Din, C, L);
+  const TDH = Hest + hf;
+  const BHP_req = bhpReq(Qsol);
+  const V = 0.4085 * Qsol / (Din * Din);
+  
+  D('inv_Qmax').textContent = Qsol.toFixed(0) + ' gpm';
+  D('inv_tdh').textContent = TDH.toFixed(1) + ' ft';
+  D('inv_bhp_disp').textContent = BHP_disp.toFixed(1) + ' HP';
+  D('inv_bhp_req').textContent = BHP_req.toFixed(1) + ' HP';
+  D('inv_vel').textContent = V.toFixed(2) + ' ft/s';
+  D('inv_hf').textContent = hf.toFixed(1) + ' ft';
+  D('inv_iter').textContent = iter;
+  
+  const badge = D('inv_vel_badge');
+  if (V >= 3 && V <= 7) { badge.textContent = '✓ ÓPTIMO'; badge.className = 'badge ok'; }
+  else if (V > 7 && V <= 10) { badge.textContent = '⚠ ACEPTABLE'; badge.className = 'badge warn'; }
+  else if (V > 10) { badge.textContent = '✗ EROSIÓN'; badge.className = 'badge alert'; }
+  else { badge.textContent = '⚠ Velocidad baja'; badge.className = 'badge warn'; }
+  
+  // Diagnostico
+  const diag = D('inv_diag');
+  const msg = D('inv_msg');
+  diag.className = 'result-block';
+  let texto = '';
+  if (Qsol < 1) {
+    diag.classList.add('alert');
+    texto = '✗ Motor INSUFICIENTE. El motor ' + Pmotor + ' HP no puede vencer la H_estática de ' + Hest + ' ft con esta tubería. Opciones: motor mayor, diámetro mayor, o reducir H_estática.';
+  } else if (Qsol >= 2083 * 0.95) {
+    diag.classList.add('warn');
+    texto = '⚠ Motor SOBREDIMENSIONADO. El motor entrega más caudal del rango típico de esta aplicación. Verificar si el sistema acepta ese caudal o considerar motor menor.';
+  } else if (V > 10) {
+    diag.classList.add('alert');
+    texto = '✗ Velocidad EXCESIVA a Q_max (' + V.toFixed(1) + ' ft/s). Riesgo de erosión y golpe ariete. Subir diámetro de tubería para operar más cómodo.';
+  } else if (V < 3) {
+    diag.classList.add('warn');
+    texto = '⚠ Velocidad baja (' + V.toFixed(1) + ' ft/s). Posible sedimentación si hay sólidos. Considerar diámetro menor.';
+  } else {
+    diag.classList.add('ok');
+    texto = '✓ Sistema OPERATIVO. Motor adecuado, velocidad correcta. Q_max = ' + Qsol.toFixed(0) + ' gpm con TDH = ' + TDH.toFixed(0) + ' ft.';
+  }
+  msg.textContent = texto;
+}
+
+// === EVENTOS ===
+document.querySelectorAll('#panel-calc input, #panel-calc select').forEach(el =>
+  el.addEventListener('input', calc));
+document.querySelectorAll('#panel-inverso input, #panel-inverso select').forEach(el =>
+  el.addEventListener('input', calcInverso));
+
+// ResizeObserver para grafica
+if (window.ResizeObserver) {
+  const ro = new ResizeObserver(() => {
+    if (D('panel-calc').classList.contains('active')) calc();
+  });
+  ro.observe(D('chart').parentElement);
+}
+window.addEventListener('resize', () => {
+  if (D('panel-calc').classList.contains('active')) calc();
+});
+window.addEventListener('orientationchange', () => setTimeout(calc, 100));
+
+calc();
+calcInverso();
+
+</script>
+</body>
+</html>
