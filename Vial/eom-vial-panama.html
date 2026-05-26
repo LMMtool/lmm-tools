@@ -1,0 +1,2834 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EOM Vial · LMM Ingeniería</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --primary:#1E3A5F;--accent:#2D6A9F;--light:#4A90C4;
+  --ink:#1A1A2E;--ink-2:#2D2D44;--ink-3:#6B7280;
+  --bg:#F5F7FA;--bg-2:#EAEEF4;--paper:#FFFFFF;
+  --rule:#D5DCE4;--rule-2:#B5BFC9;
+  --warn:#D97706;--bad:#DC2626;--good:#15803D;
+  --shade:#EAEEF4;--highlight:#FEF3C7;--info-bg:#E8F0F8;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:Verdana,Geneva,sans-serif;min-height:100vh;font-size:13px;line-height:1.4}
+.mono{font-family:'IBM Plex Mono',monospace}
+
+/* HEADER */
+header{border-bottom:2px solid var(--primary);padding:14px 26px;background:var(--paper);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.brand-wrap{display:flex;align-items:center;gap:12px}
+.lmm-logo{width:50px;height:50px;background:linear-gradient(135deg,var(--primary),var(--accent));display:grid;place-items:center;border-radius:6px;color:#fff;font-weight:800;font-size:15px;letter-spacing:-0.04em}
+.lmm-logo::after{content:"LMM"}
+h1{font-size:20px;font-weight:800;letter-spacing:-0.02em;line-height:1.1;color:var(--primary)}
+.tagline{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.18em;color:var(--ink-3);margin-top:3px}
+.tagline b{color:var(--accent)}
+.head-actions{display:flex;gap:8px;flex-wrap:wrap}
+.head-btn{padding:9px 14px;background:var(--primary);color:#fff;border:none;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;cursor:pointer;border-radius:4px;font-weight:600}
+.head-btn:hover{background:var(--ink)}
+.head-btn.alt{background:var(--accent)}
+.head-btn.warn{background:var(--paper);color:var(--primary);border:1px solid var(--primary)}
+.head-btn.warn:hover{background:var(--primary);color:#fff}
+
+/* DISCLAIMER */
+.disclaimer{background:#FFFBEB;border-bottom:2px solid var(--warn);padding:10px 26px;font-size:11px;color:var(--ink-2);display:flex;gap:12px;align-items:flex-start}
+.disclaimer .icon{background:var(--warn);color:#fff;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;font-weight:800;flex-shrink:0;font-size:13px;margin-top:1px}
+.disclaimer .txt{flex:1;line-height:1.5}
+.disclaimer b{color:var(--warn);font-weight:700}
+.disclaimer .more{color:var(--accent);text-decoration:underline;cursor:pointer;font-weight:700}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(26,26,46,0.7);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:var(--paper);border-radius:8px;max-width:680px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.modal-head{padding:16px 22px;border-bottom:2px solid var(--primary);display:flex;justify-content:space-between;align-items:center}
+.modal-head h2{color:var(--primary);font-size:17px;font-weight:800;letter-spacing:-0.01em}
+.modal-close{background:none;border:none;font-size:24px;cursor:pointer;color:var(--ink-3);line-height:1}
+.modal-body{padding:20px 22px}
+.modal-body h3{color:var(--primary);font-size:12px;font-weight:700;margin-top:14px;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.1em}
+.modal-body h3:first-child{margin-top:0}
+.modal-body p{font-size:13px;line-height:1.6;color:var(--ink-2);margin-bottom:10px}
+.modal-body ul{padding-left:20px;font-size:13px;line-height:1.7;color:var(--ink-2)}
+.modal-body ul li{margin-bottom:4px}
+.modal-body b{color:var(--primary)}
+
+/* TABS */
+.tabs{display:flex;background:var(--paper);border-bottom:1px solid var(--rule);padding:0 26px;overflow-x:auto}
+.tabs button{padding:11px 14px;background:none;border:none;border-bottom:3px solid transparent;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:var(--ink-3);cursor:pointer;white-space:nowrap;font-weight:500}
+.tabs button:hover{color:var(--ink)}
+.tabs button.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:700}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:380px 1fr;min-height:calc(100vh - 240px)}
+@media(max-width:1100px){.layout{grid-template-columns:1fr}}
+.sidebar{background:var(--paper);border-right:1px solid var(--rule);padding:16px;overflow-y:auto;max-height:calc(100vh - 240px)}
+.workspace{padding:22px 26px;display:flex;flex-direction:column;gap:18px}
+
+/* GROUPS */
+.group{border:1px solid var(--rule);border-radius:6px;margin-bottom:12px;background:var(--paper);overflow:hidden}
+.group-head{padding:9px 12px;background:var(--shade);border-bottom:1px solid var(--rule);font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.16em;color:var(--primary);font-weight:700;cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center}
+.group-head::after{content:"▾";font-size:10px}
+.group-head.collapsed::after{content:"▸"}
+.group-body{padding:11px 12px}
+.group-body.hide{display:none}
+
+.field{margin-bottom:9px}
+.field:last-child{margin-bottom:0}
+.field label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;color:var(--ink-2);font-weight:600}
+.field label .v{font-family:'IBM Plex Mono',monospace;color:var(--accent);font-weight:700;font-size:11px}
+.field input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer}
+.field select,.field input[type=number],.field input[type=text]{width:100%;background:var(--paper);border:1px solid var(--rule);padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:4px;color:var(--ink)}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent);background:var(--info-bg)}
+
+.terrain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.terrain-grid .cell label{font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-3);font-family:'IBM Plex Mono',monospace;font-weight:600}
+.terrain-grid input{width:100%;padding:5px;font-size:11px;text-align:center;border:1px solid var(--rule);font-family:'IBM Plex Mono',monospace;border-radius:3px}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--paper),var(--info-bg));border:1px solid var(--rule);border-radius:8px;padding:22px 24px;border-top:4px solid var(--primary)}
+.hero-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;align-items:start}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:16px}}
+.cost-block .label{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:var(--ink-3);margin-bottom:5px}
+.cost-block .num{font-size:30px;font-weight:800;letter-spacing:-0.03em;line-height:1;color:var(--primary);font-family:'IBM Plex Mono',monospace}
+.cost-block .num.a{color:var(--accent)}
+.cost-block .num.w{color:var(--warn)}
+.cost-block .unit{font-size:12px;color:var(--ink-3);font-weight:500;margin-left:4px}
+.cost-block .perKm{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-2);margin-top:5px}
+.cost-block .delta{margin-top:8px;font-size:11px;color:var(--ink-2);padding:6px 10px;background:var(--paper);border-left:3px solid var(--good);border-radius:2px}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--paper);border:1px solid var(--rule);padding:12px 14px;border-radius:6px;border-top:3px solid var(--ink-3)}
+.kpi.b{border-top-color:var(--primary)}
+.kpi.a{border-top-color:var(--accent)}
+.kpi.l{border-top-color:var(--light)}
+.kpi.g{border-top-color:var(--good)}
+.kpi .l{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.15em;color:var(--ink-3);margin-bottom:4px}
+.kpi .n{font-size:20px;font-weight:800;letter-spacing:-0.02em;color:var(--ink);font-family:'IBM Plex Mono',monospace}
+.kpi .n .unit{font-size:11px;color:var(--ink-3);font-weight:500;margin-left:3px}
+.kpi .sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-3);margin-top:3px}
+
+/* PANELS */
+.panel{background:var(--paper);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.panel-head{padding:13px 18px;border-bottom:1px solid var(--rule);display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;background:var(--shade)}
+.panel-head h2{font-size:16px;font-weight:800;letter-spacing:-0.01em;color:var(--primary)}
+.panel-head h2 small{font-weight:500;color:var(--ink-3);font-size:13px}
+.panel-head .tag{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.18em;color:var(--ink-3);background:var(--paper);padding:3px 9px;border-radius:3px;border:1px solid var(--rule)}
+.panel-body{padding:18px}
+
+/* EDITABLE PARAM ROWS */
+.edit-row{display:grid;grid-template-columns:1fr 110px 30px;gap:6px;align-items:center;padding:8px 10px;background:var(--bg);border-radius:4px;border:1px solid var(--rule);margin-bottom:6px}
+.edit-row.wide{grid-template-columns:1fr 90px 90px 30px}
+@media(max-width:700px){.edit-row,.edit-row.wide{grid-template-columns:1fr 1fr}}
+.edit-row .lab{font-size:11px;color:var(--ink-2);font-weight:600}
+.edit-row .lab small{display:block;color:var(--ink-3);font-weight:400;font-size:10px;margin-top:2px;font-family:'IBM Plex Mono',monospace}
+.edit-row input,.edit-row select{background:var(--paper);border:1px solid var(--rule);padding:5px 7px;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:3px;width:100%;text-align:right}
+.edit-row select{text-align:left}
+.edit-row input:focus,.edit-row select:focus{outline:none;border-color:var(--accent);background:var(--info-bg)}
+.edit-row button.help{background:none;border:1px solid var(--rule);color:var(--accent);width:26px;height:26px;border-radius:3px;cursor:pointer;font-size:13px;font-weight:700}
+.edit-row button.help:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.help-text{background:var(--info-bg);border-left:3px solid var(--accent);padding:9px 12px;margin:6px 0 8px;font-size:11px;line-height:1.5;color:var(--ink-2);border-radius:0 4px 4px 0;display:none}
+.help-text.show{display:block}
+.help-text b{color:var(--accent)}
+
+/* STRUCT TABLE - drenaje */
+.struct-table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:11px}
+.struct-table th{text-align:left;padding:8px;background:var(--shade);color:var(--primary);text-transform:uppercase;letter-spacing:0.1em;font-size:9px;font-weight:700;border:1px solid var(--rule)}
+.struct-table td{padding:6px 8px;border:1px solid var(--rule)}
+.struct-table td input,.struct-table td select{background:var(--paper);border:1px solid var(--rule);padding:4px 6px;font-family:'IBM Plex Mono',monospace;font-size:10px;border-radius:3px;width:100%}
+.struct-table td input:focus,.struct-table td select:focus{outline:none;border-color:var(--accent)}
+.struct-table button.del{background:none;border:1px solid var(--rule);color:var(--bad);cursor:pointer;padding:3px 7px;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700}
+.struct-table button.del:hover{background:var(--bad);color:#fff;border-color:var(--bad)}
+
+.btn-add{width:100%;background:var(--paper);border:1px dashed var(--rule-2);color:var(--accent);padding:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;cursor:pointer;border-radius:5px;margin-top:8px;font-weight:600}
+.btn-add:hover{border-color:var(--accent);background:var(--info-bg)}
+
+/* PRECIOS */
+.price-row{display:grid;grid-template-columns:1fr 110px 1fr 70px;gap:8px;align-items:center;padding:9px 10px;background:var(--bg);border-radius:5px;border:1px solid var(--rule);margin-bottom:6px}
+@media(max-width:800px){.price-row{grid-template-columns:1fr 1fr;gap:6px}}
+.price-row .desc{font-size:11px;color:var(--ink-2);font-weight:600}
+.price-row .desc small{display:block;color:var(--ink-3);font-weight:400;font-size:10px;margin-top:2px;font-family:'IBM Plex Mono',monospace}
+.price-row input.price{background:var(--paper);border:1.5px solid var(--rule-2);padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--ink);border-radius:4px;text-align:right;width:100%}
+.price-row input.price:focus{outline:none;border-color:var(--primary);background:var(--info-bg)}
+.price-row input.source{background:var(--paper);border:1px solid var(--rule);padding:6px 8px;font-family:Verdana,sans-serif;font-size:11px;color:var(--ink-2);border-radius:4px;font-style:italic;width:100%}
+.price-row input.source::placeholder{color:var(--ink-3);font-size:10px}
+.price-row input.source:focus{outline:none;border-color:var(--accent)}
+.price-row button.use{background:var(--info-bg);border:1px solid var(--accent);color:var(--accent);padding:5px 0;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;font-weight:700;text-transform:uppercase;letter-spacing:0.1em}
+.price-row button.use:hover{background:var(--accent);color:#fff}
+
+/* TABLA RESULTADOS */
+table.audit{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:11px}
+table.audit th{text-align:left;padding:9px 10px;background:var(--primary);color:#fff;text-transform:uppercase;letter-spacing:0.1em;font-size:9px;font-weight:600}
+table.audit th.right{text-align:right}
+table.audit td{padding:7px 10px;border-bottom:1px solid var(--rule);color:var(--ink-2);vertical-align:top}
+table.audit td.right{text-align:right}
+table.audit td.num{font-weight:700;color:var(--ink)}
+table.audit td.src{font-size:10px;color:var(--ink-3);font-style:italic;font-family:Verdana,sans-serif}
+table.audit tr:hover td{background:var(--bg)}
+table.audit tr.subtotal td{background:var(--bg-2);font-weight:700;border-bottom:2px solid var(--primary);font-size:11px}
+table.audit tr.total td{background:var(--primary);color:#fff;font-size:13px;font-weight:700}
+
+/* BENCHMARKS */
+.bench-table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:11px}
+.bench-table th{background:var(--primary);color:#fff;padding:9px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;font-weight:600}
+.bench-table th.right{text-align:right}
+.bench-table td{padding:7px 8px;border-bottom:1px solid var(--rule);font-size:11px;color:var(--ink-2)}
+.bench-table td.right{text-align:right;font-weight:700;color:var(--ink)}
+.bench-table tr.you-row td{background:var(--info-bg);font-weight:700}
+.bench-table tr.you-row td:first-child{border-left:4px solid var(--primary)}
+
+/* PDF SELECTOR */
+.pdf-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:14px}
+.pdf-check{background:var(--bg);border:1.5px solid var(--rule);padding:9px 11px;border-radius:5px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all .15s}
+.pdf-check input{margin:0;accent-color:var(--primary);cursor:pointer}
+.pdf-check.checked{background:var(--info-bg);border-color:var(--primary)}
+.pdf-check label{cursor:pointer;flex:1;color:var(--ink-2);font-weight:500}
+.pdf-check.checked label{color:var(--primary);font-weight:600}
+
+/* FOOTER */
+footer{border-top:2px solid var(--primary);padding:14px 26px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-3);background:var(--paper);text-transform:uppercase;letter-spacing:0.12em;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+footer b{color:var(--primary)}
+
+.export-bar{margin-top:12px;display:flex;gap:6px}
+.export-bar button{flex:1;padding:10px;background:var(--primary);color:#fff;border:none;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;cursor:pointer;border-radius:4px;font-weight:600}
+.export-bar button:hover{background:var(--ink)}
+.export-bar button.sec{background:var(--accent)}
+
+canvas{display:block;width:100%;height:auto;max-width:100%}
+
+.empty{text-align:center;padding:30px;color:var(--ink-3);font-style:italic;font-size:12px}
+
+.refs-block{background:var(--info-bg);border:1px solid #b8d1e8;border-left:4px solid var(--primary);padding:11px 16px;border-radius:4px;margin-bottom:14px;font-size:12px;line-height:1.5}
+.refs-block h4{color:var(--primary);font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.15em;font-weight:700;margin-bottom:6px}
+.refs-block p{color:var(--ink-2);margin-bottom:4px}
+.refs-block b{color:var(--primary)}
+
+/* Mantenimiento - eventos */
+.maint-event{display:grid;grid-template-columns:1fr 90px 110px 110px 30px;gap:6px;align-items:center;padding:8px 10px;background:var(--bg);border:1px solid var(--rule);border-radius:4px;margin-bottom:6px}
+@media(max-width:700px){.maint-event{grid-template-columns:1fr 1fr}}
+.maint-event .lab{font-size:11px;color:var(--ink-2);font-weight:600}
+.maint-event .lab small{display:block;color:var(--ink-3);font-size:10px;font-weight:400;margin-top:2px;font-family:'IBM Plex Mono',monospace}
+.maint-event input,.maint-event select{background:var(--paper);border:1px solid var(--rule);padding:5px 7px;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:3px;width:100%;text-align:right}
+
+.toast{position:fixed;bottom:20px;right:20px;background:var(--primary);color:#fff;padding:12px 18px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:9999;opacity:0;transform:translateY(20px);transition:all .25s}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.good{background:var(--good)}
+
+@media print{
+  .sidebar,header,.disclaimer,.tabs,footer,.head-actions,.export-bar{display:none}
+  .layout{grid-template-columns:1fr}
+  .workspace{padding:15px}
+  .panel,.hero,.kpi{break-inside:avoid;border:1px solid #999;background:#fff}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-wrap">
+    <div class="lmm-logo"></div>
+    <div>
+      <h1>EOM Vial · Estimación de Orden de Magnitud</h1>
+      <div class="tagline">Infraestructura Vial · Aplicación desarrollada por <b>LMM Ingeniería</b></div>
+    </div>
+  </div>
+  <div class="head-actions">
+    <button class="head-btn warn" onclick="openModal('modal-disclaimer')">¿Qué es EOM?</button>
+    <button class="head-btn alt" onclick="openModal('modal-pdf')">Generar PDF</button>
+  </div>
+</header>
+
+<div class="disclaimer">
+  <div class="icon">!</div>
+  <div class="txt">
+    <b>ESTIMACIÓN DE ORDEN DE MAGNITUD (EOM) — AACE 98R-18 (CLASES 4-5)</b> · Estimación paramétrica preliminar 
+    para evaluación temprana de inversión. La exactitud depende de la calidad de los precios unitarios y cantidades 
+    ingresados por el usuario, típicamente <b>−15% a +30%</b> con cotizaciones reales o APUs de proyectos similares. 
+    <b>No sustituye el APU detallado</b> requerido por las normas del MOP Panamá y la Ley 22 de Contrataciones Públicas para licitación. 
+    <span class="more" onclick="openModal('modal-disclaimer')">▸ Ver detalle técnico</span>
+  </div>
+</div>
+
+<!-- MODAL DISCLAIMER -->
+<div class="modal-bg" id="modal-disclaimer">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Sobre esta Estimación · LMM Ingeniería</h2>
+      <button class="modal-close" onclick="closeModal('modal-disclaimer')">×</button>
+    </div>
+    <div class="modal-body">
+      <h3>● Qué es una EOM y a qué clase AACE corresponde</h3>
+      <p>La <b>AACE International</b> clasifica las estimaciones de costo en 5 clases según el grado de definición del proyecto. 
+      Para infraestructura vial aplica la <b>Recommended Practice 98R-18</b> (Road and Rail Transportation).</p>
+      <p>Esta herramienta puede producir estimaciones de <b>Clase 4 o 5</b> dependiendo de la calidad de la información que el usuario ingrese:</p>
+      <ul>
+        <li><b>Clase 5</b> (0-2% de definición, exactitud típica −20% a +30%): si se usan precios referenciales sin verificar y cantidades estimadas sin trabajo de campo.</li>
+        <li><b>Clase 4</b> (1-15% de definición, exactitud típica −15% a +30%): si se usan precios reales (APUs, cotizaciones recientes) y cantidades calibradas con inspección de campo.</li>
+      </ul>
+      
+      <h3>● Por qué NO es presupuesto contractual</h3>
+      <ul>
+        <li>No considera condiciones específicas del sitio sin levantamiento topográfico, geotécnico ni hidrológico detallado</li>
+        <li>No incluye análisis de tránsito de obra, manejo ambiental específico ni servidumbres particulares</li>
+        <li>No considera variaciones por estacionalidad, condiciones de mercado o materias primas</li>
+        <li>No reemplaza estudios requeridos por la Ley 22 de 2006 ni normas del MOP Panamá para licitación</li>
+      </ul>
+
+      <h3>● Para qué SÍ sirve</h3>
+      <ul>
+        <li>Evaluación temprana de viabilidad económica de un proyecto vial</li>
+        <li>Comparación de alternativas conceptuales (trazado, sección, intervención)</li>
+        <li>Sustento para solicitar fondos de pre-inversión o estudios definitivos</li>
+        <li>Análisis de sensibilidad ante cambios paramétricos</li>
+        <li>Verificación de razonabilidad de presupuestos detallados</li>
+        <li>Documento auditable con trazabilidad de fuentes (cada precio cita su origen)</li>
+      </ul>
+
+      <h3>● Bases normativas</h3>
+      <ul>
+        <li><b>AASHTO Green Book</b> — Geometric Design of Highways and Streets</li>
+        <li><b>SIECA 2011</b> — Manual Centroamericano de Diseño Geométrico</li>
+        <li><b>MOP Panamá</b> — Manual de Especificaciones Técnicas Generales</li>
+        <li><b>Contraloría General de Panamá V10.4</b> (2023) — Base oficial de precios directos</li>
+        <li><b>HSM AASHTO 2010</b> — Highway Safety Manual</li>
+        <li><b>AACE Recommended Practice 98R-18</b> (2020) — Cost Estimate Classification para infraestructura vial</li>
+        <li>Adjudicaciones públicas MOP / PanamaCompra para benchmarks</li>
+      </ul>
+
+      <h3>● Recomendaciones de uso</h3>
+      <ul>
+        <li>Documentar fuentes de todos los precios unitarios ingresados (campo Fuente)</li>
+        <li>Validar cantidades con inspección de campo cuando sea posible</li>
+        <li>Comparar resultado por km con proyectos benchmark panameños similares (pestaña 07)</li>
+        <li>Avanzar a estudio Clase 3 o superior (factibilidad/definitivo) antes de licitar</li>
+        <li>Considerar contingencias específicas según condiciones del proyecto</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PDF SELECTOR -->
+<div class="modal-bg" id="modal-pdf">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Generar Reporte PDF</h2>
+      <button class="modal-close" onclick="closeModal('modal-pdf')">×</button>
+    </div>
+    <div class="modal-body">
+      <p>Selecciona las secciones a incluir en el reporte:</p>
+      <div class="pdf-options" id="pdf-sections"></div>
+      <h3 style="margin-top:14px">Información de portada</h3>
+      <div class="field"><label>Nombre proyecto</label><input type="text" id="pdf-prj"></div>
+      <div class="field"><label>Cliente</label><input type="text" id="pdf-cli"></div>
+      <div class="field"><label>Responsable técnico</label><input type="text" id="pdf-resp" placeholder="Ej: Ing. Juan Pérez · Consultora XYZ"></div>
+      <button class="head-btn alt" style="width:100%;padding:12px;margin-top:14px" onclick="generatePDF()">Descargar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HELP genérico -->
+<div class="modal-bg" id="modal-help">
+  <div class="modal">
+    <div class="modal-head"><h2 id="help-title">Cómo estimar</h2><button class="modal-close" onclick="closeModal('modal-help')">×</button></div>
+    <div class="modal-body" id="help-body"></div>
+  </div>
+</div>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="datos">01 · Datos Proyecto</button>
+  <button class="tab-btn" data-tab="cantidades">02 · Volúmenes y Cantidades</button>
+  <button class="tab-btn" data-tab="drenaje">03 · Drenaje Transversal</button>
+  <button class="tab-btn" data-tab="precios">04 · Precios Unitarios</button>
+  <button class="tab-btn" data-tab="resultados">05 · Resultados</button>
+  <button class="tab-btn" data-tab="mantenimiento">06 · Mantenimiento LCC</button>
+  <button class="tab-btn" data-tab="benchmark">07 · Benchmark Panamá</button>
+  <button class="tab-btn" data-tab="auditoria">08 · Registro Auditable</button>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="workspace">
+    <section id="tab-datos"></section>
+    <section id="tab-cantidades" style="display:none"></section>
+    <section id="tab-drenaje" style="display:none"></section>
+    <section id="tab-precios" style="display:none"></section>
+    <section id="tab-resultados" style="display:none"></section>
+    <section id="tab-mantenimiento" style="display:none"></section>
+    <section id="tab-benchmark" style="display:none"></section>
+    <section id="tab-auditoria" style="display:none"></section>
+  </main>
+</div>
+
+<footer>
+  <span><b>Aplicación desarrollada por LMM Ingeniería</b> · Especialistas en Infraestructura Hidráulica y Vial · Panamá</span>
+  <span><a href="mailto:lmarquez@lmmingenieria.com" style="color:var(--accent);text-decoration:none;font-weight:700">lmarquez@lmmingenieria.com</a> · v1.0 · 2026</span>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════════
+   SCRIPT - DATOS Y ESTADO
+   ════════════════════════════════════════════════════════════════════════ */
+
+// PRECIOS REFERENCIALES PANAMÁ
+// Fuentes: Contraloría Panamá V10.4 (2023), MOP, mercado 2024-2025
+const PARTIDAS = [
+  // PRELIMINARES
+  {id:'limpieza', cap:'preliminares', nombre:'Limpieza y desarraigue', unidad:'m²', ref:1.13, fuente:'Contraloría Panamá V10.4 - Pág. 4'},
+  {id:'replanteo', cap:'preliminares', nombre:'Replanteo topográfico', unidad:'m', ref:3.63, fuente:'Contraloría Panamá V10.4 - Pág. 5'},
+  
+  // TIERRAS
+  {id:'excav_retro', cap:'tierras', nombre:'Excavación común c/retro', unidad:'m³', ref:6.29, fuente:'Contraloría Panamá V10.4 - Pág. 9'},
+  {id:'relleno_sel', cap:'tierras', nombre:'Relleno material selecto compactado', unidad:'m³', ref:39.64, fuente:'Contraloría Panamá V10.4 - Pág. 16'},
+  {id:'muros', cap:'tierras', nombre:'Muro contención concreto (h≈3m)', unidad:'m', ref:850, fuente:'Referencia regional 2024-2025 (sin APU oficial Panamá)'},
+  
+  // PAVIMENTO
+  {id:'subbase', cap:'pavimento', nombre:'Sub-base granular CBR>30', unidad:'m³', ref:28, fuente:'Manual MOP Sec. 303 · Ref. mercado 2024'},
+  {id:'base_gran', cap:'pavimento', nombre:'Base granular CBR>80', unidad:'m³', ref:39.08, fuente:'Contraloría Panamá V10.4 - Pág. 17'},
+  {id:'imprimacion', cap:'pavimento', nombre:'Imprimación asfáltica', unidad:'m²', ref:2.10, fuente:'MOP Sec. 405 · Cotizaciones 2024'},
+  {id:'asfalto_ton', cap:'pavimento', nombre:'Mezcla asfáltica MDC en sitio', unidad:'ton', ref:165, fuente:'Mercado Panamá 2024-2025 · MOP Sec. 401'},
+  {id:'concr_pav', cap:'pavimento', nombre:'Concreto pavimento 4000 psi', unidad:'m³', ref:219.91, fuente:'Contraloría Panamá V10.4 - Pág. 28'},
+  {id:'fresado', cap:'pavimento', nombre:'Fresado asfalto existente', unidad:'m²', ref:4.50, fuente:'MOP Sec. 411 · Ref. mercado 2024'},
+  {id:'sello', cap:'pavimento', nombre:'Sello / microaglomerado', unidad:'m²', ref:5.20, fuente:'SIECA Mantenimiento · Mercado 2024'},
+  
+  // DRENAJE
+  {id:'cordon_cuneta', cap:'drenaje', nombre:'Cordón cuneta 45cm', unidad:'m', ref:38.44, fuente:'Contraloría Panamá V10.4 - Pág. 101'},
+  {id:'cordon_simple', cap:'drenaje', nombre:'Cordón simple', unidad:'m', ref:22.75, fuente:'Contraloría Panamá V10.4 - Pág. 100'},
+  {id:'subdrenes', cap:'drenaje', nombre:'Subdrén longitudinal', unidad:'m', ref:32, fuente:'MOP Sec. 605 · Ref. mercado'},
+  // drenaje transversal: precios por unidad - se calculan según tabla aparte
+  {id:'tubo_concr_24', cap:'drenaje', nombre:'Tubo concreto Ø24" (por m lineal)', unidad:'m', ref:120, fuente:'MOP Sec. 502 · Ref. mercado 2024'},
+  {id:'tubo_concr_36', cap:'drenaje', nombre:'Tubo concreto Ø36" (por m lineal)', unidad:'m', ref:185, fuente:'MOP Sec. 502 · Ref. mercado 2024'},
+  {id:'tubo_concr_48', cap:'drenaje', nombre:'Tubo concreto Ø48" (por m lineal)', unidad:'m', ref:290, fuente:'MOP Sec. 502 · Ref. mercado 2024'},
+  {id:'tubo_concr_60', cap:'drenaje', nombre:'Tubo concreto Ø60" (por m lineal)', unidad:'m', ref:420, fuente:'MOP Sec. 502 · Ref. mercado 2024'},
+  {id:'cajon_concr', cap:'drenaje', nombre:'Cajón concreto reforzado (por m³)', unidad:'m³', ref:520, fuente:'MOP Sec. 503 · Mercado 2024'},
+  {id:'box_culvert', cap:'drenaje', nombre:'Box culvert prefabricado (por m³)', unidad:'m³', ref:680, fuente:'Proveedores Panamá 2024 (Concretos Nacionales)'},
+  {id:'puente_concr', cap:'drenaje', nombre:'Puente concreto reforzado (por m²)', unidad:'m²', ref:2200, fuente:'Ref. proyectos MOP · Concreto convencional'},
+  {id:'puente_acero', cap:'drenaje', nombre:'Puente acero estructural (por m²)', unidad:'m²', ref:2800, fuente:'Ref. proyectos MOP · Acero vigas/celosía'},
+  {id:'puente_mixto', cap:'drenaje', nombre:'Puente mixto acero-concreto (por m²)', unidad:'m²', ref:2500, fuente:'Ref. proyectos MOP · Sección mixta'},
+  {id:'cabezal', cap:'drenaje', nombre:'Cabezal alcantarilla (por unidad)', unidad:'un', ref:1850, fuente:'MOP Sec. 503 · Ref. mercado'},
+  
+  // SEÑALIZACIÓN
+  {id:'pintura_h', cap:'senalizacion', nombre:'Pintura horizontal termoplástica', unidad:'m', ref:2.10, fuente:'MOP Sec. 633 · Mercado 2024'},
+  {id:'senal_vert', cap:'senalizacion', nombre:'Señal vertical reglamentaria instalada', unidad:'un', ref:320, fuente:'MOP Sec. 632 · Mercado 2024'},
+  {id:'rpm', cap:'senalizacion', nombre:'Tachón / RPM reflectivo bidireccional', unidad:'un', ref:11, fuente:'Mercado 2024 · Especificación MOP'},
+  
+  // SEGURIDAD
+  {id:'defensa_met', cap:'seguridad', nombre:'Defensa metálica tipo W galvanizada', unidad:'m', ref:68, fuente:'MOP Sec. 631 · Mercado 2024'},
+  {id:'barrera_concr', cap:'seguridad', nombre:'Barrera New Jersey concreto', unidad:'m', ref:215, fuente:'MOP Sec. 631 · Mercado 2024'},
+  
+  // INDIRECTOS
+  {id:'admin_pct', cap:'admin', nombre:'Administración + Imprevistos', unidad:'%', ref:15, fuente:'Práctica MOP Panamá (12-18%)'},
+  {id:'isv_pct', cap:'admin', nombre:'Estudios + Supervisión + ITBMS', unidad:'%', ref:12, fuente:'Práctica MOP Panamá (10-15%)'},
+];
+
+// BENCHMARK PROYECTOS PANAMÁ (20+ adjudicaciones reales)
+const BENCHMARKS = [
+  {nombre:'Arraiján - La Chorrera (rehab+ampl. asfalto)', km:22, total:152800000, perkm:6945000, categoria:'rehab', tipo:'Rehab+ampl. 4 carriles asfalto', ref:'Adjudicación 2014-2015', ano:2015, prov:'Panamá Oeste'},
+  {nombre:'Arraiján - La Chorrera (concreto original)', km:23, total:65900000, perkm:2864000, categoria:'construccion', tipo:'Construcción concreto 4 carriles', ref:'Adjudicación 2007', ano:2007, prov:'Panamá Oeste'},
+  {nombre:'APP Loma Campana - Santiago', km:192, total:312300000, perkm:1626000, categoria:'mantenimiento', tipo:'Rehab+mant. APP 20 años', ref:'Lic. APP 2025-09 MOP', ano:2026, prov:'Veraguas/Coclé'},
+  {nombre:'APP Carretera Panamericana Este', km:246, total:283000000, perkm:1150000, categoria:'rehab', tipo:'Rehab. APP', ref:'Adjudicación MOP 2024', ano:2024, prov:'Panamá/Darién'},
+  {nombre:'Corredor de las Playas', km:20, total:228451693, perkm:11422584, categoria:'construccion', tipo:'Ampl. 4→6 + viaducto Campana', ref:'Adjudicación 2026 · MECO', ano:2026, prov:'Panamá Oeste'},
+  {nombre:'CPA-Cabuya-Las Lajas y Ramales', km:9.4, total:3898661, perkm:414751, categoria:'rehab', tipo:'Rehab+2 puentes vehiculares', ref:'Lic. MOP 2022', ano:2022, prov:'Panamá Oeste'},
+  {nombre:'Red Vial Panamá y San Miguelito', km:64, total:12735000, perkm:199000, categoria:'rehab', tipo:'Diseño+rehab. red urbana', ref:'Lic. MOP 2025', ano:2025, prov:'Panamá'},
+  {nombre:'Aguadulce-Playa El Salado+ciclovía', km:7.89, total:7000000, perkm:887000, categoria:'rehab', tipo:'Rehab. + ciclovía', ref:'Lic. MOP 2026', ano:2026, prov:'Coclé'},
+  {nombre:'Penonomé-Caimito-Toabré-La Pintada', km:67.4, total:33200000, perkm:493000, categoria:'rehab', tipo:'Rehab. red rural', ref:'Lic. MOP 2026', ano:2026, prov:'Coclé'},
+  {nombre:'Quebrada Ancha-María Chiquita', km:28.4, total:87000000, perkm:3063000, categoria:'construccion', tipo:'Construcción nueva turística', ref:'Adjudicación MOP 2022', ano:2022, prov:'Colón'},
+  {nombre:'La Feria-Playa Paunch + Bocas', km:28.3, total:81900000, perkm:2894000, categoria:'rehab', tipo:'Rehab+calles internas Isla Colón', ref:'Adjudicación MOP 2022', ano:2022, prov:'Bocas del Toro'},
+  {nombre:'Calles internas El Valle de Antón', km:10, total:8500000, perkm:850000, categoria:'construccion', tipo:'Diseño+constr. urbana', ref:'Adjudicación MOP 2022', ano:2022, prov:'Coclé'},
+  {nombre:'El Guabal-Río Luis-Calovébora', km:33, total:75000000, perkm:2273000, categoria:'construccion', tipo:'Construcción nueva montañosa', ref:'Proyecto MOP', ano:2023, prov:'Veraguas'},
+  {nombre:'Cerro Sombrero-Chichica', km:31.2, total:18000000, perkm:577000, categoria:'construccion', tipo:'Diseño+constr. camino rural', ref:'Proyecto MOP', ano:2023, prov:'Ngäbe-Buglé'},
+  {nombre:'San Andrés-Santa Cruz-Caisán-Monte Lirio', km:63.6, total:48000000, perkm:755000, categoria:'rehab', tipo:'Rehab+circunv. red rural', ref:'Proyecto MOP', ano:2022, prov:'Chiriquí'},
+  {nombre:'Tolé y San Lorenzo (caminos)', km:37, total:14500000, perkm:391000, categoria:'rehab', tipo:'Rehab. caminos rurales', ref:'Proyecto MOP', ano:2022, prov:'Chiriquí'},
+  {nombre:'Calles Volcán y Concepción', km:21.9, total:18000000, perkm:822000, categoria:'rehab', tipo:'Rehab. calles urbanas', ref:'Proyecto MOP', ano:2023, prov:'Chiriquí'},
+  {nombre:'Fuerte San Lorenzo (rehab)', km:7, total:9200000, perkm:1314000, categoria:'rehab', tipo:'Rehab. acceso turístico', ref:'Proyecto MOP 2022', ano:2022, prov:'Colón'},
+  {nombre:'CPA-Tortí-Buena Vista', km:20.1, total:22000000, perkm:1093000, categoria:'rehab', tipo:'Rehab. ramal CPA', ref:'Proyecto MOP', ano:2023, prov:'Darién'},
+  {nombre:'CPA-Agua Fría-Santa Fe-Yaviza', km:102.2, total:140000000, perkm:1370000, categoria:'rehab', tipo:'Rehab. tramos críticos', ref:'Proyecto MOP', ano:2024, prov:'Darién'},
+  {nombre:'Gatún-Miguel de la Borda', km:35, total:90000000, perkm:2571000, categoria:'construccion', tipo:'Construcción nueva costanera', ref:'Proyecto MOP', ano:2024, prov:'Colón'},
+  {nombre:'Mantenimiento CPA Aguadulce-Santiago', km:56.6, total:18000000, perkm:318000, categoria:'mantenimiento', tipo:'Mantenimiento rutinario', ref:'Proyecto MOP', ano:2023, prov:'Coclé/Veraguas'},
+];
+
+// HELP TEXTS para cada parámetro
+const HELP = {
+  pctCorte: {
+    titulo:'% Corte vs Relleno',
+    cuerpo:`<p>Define qué proporción del volumen de tierras corresponde a <b>excavación (corte)</b> versus <b>relleno compactado</b>.</p>
+    <h3>Cómo estimar en campo</h3>
+    <ul>
+      <li><b>Terreno bajante:</b> predomina relleno (30-40% corte)</li>
+      <li><b>Terreno con lomas:</b> predomina corte (60-70%)</li>
+      <li><b>Topografía equilibrada:</b> 50/50 (compensación ideal AASHTO §3.5)</li>
+      <li>Si tienes perfil longitudinal: medir áreas corte vs relleno</li>
+    </ul>
+    <p><b>Valor típico Panamá:</b> 60% corte / 40% relleno en proyectos rurales sin compensación previa.</p>`
+  },
+  pctCordonCuneta: {
+    titulo:'% Cordón Cuneta vs Cordón Simple',
+    cuerpo:`<p>El cordón cuneta (con canal) se usa donde hay <b>captación pluvial</b>. El cordón simple solo delimita la calzada.</p>
+    <h3>Cómo estimar en campo</h3>
+    <ul>
+      <li><b>Zonas urbanas con drenaje:</b> 80-100% cordón cuneta</li>
+      <li><b>Zonas rurales con cunetas en tierra:</b> 0-20% cordón cuneta</li>
+      <li><b>Vías colectoras suburbanas:</b> 60-80% cordón cuneta</li>
+      <li>Verificar en campo si la vía existente tiene cordón cuneta o solo simple</li>
+    </ul>
+    <p><b>Referencia MOP:</b> en proyectos urbanos se exige cordón cuneta para captación de agua pluvial.</p>`
+  },
+  sepSenales: {
+    titulo:'Separación entre Señales Verticales',
+    cuerpo:`<p>Define cada cuántos metros se coloca una señal vertical informativa o reglamentaria.</p>
+    <h3>Cómo estimar en campo</h3>
+    <ul>
+      <li><b>Vía rural recta:</b> 1 señal cada 300-500 m</li>
+      <li><b>Vía con curvas o intersecciones:</b> 1 cada 100-200 m</li>
+      <li><b>Zona urbana:</b> 1 cada 50-100 m</li>
+      <li>Contar en campo: cruces, accesos, curvas, cambios de límite de velocidad</li>
+    </ul>
+    <p><b>Manual SIECA Cap. 8:</b> separación máxima 500 m en tramos sin elementos.</p>`
+  },
+  sepRPM: {
+    titulo:'Separación entre Tachones (RPM)',
+    cuerpo:`<p>Reflectores de pavimento ubicados sobre líneas de demarcación.</p>
+    <h3>Cómo estimar en campo</h3>
+    <ul>
+      <li><b>Línea continua (no rebase):</b> tachones cada 12-15 m</li>
+      <li><b>Línea discontinua:</b> tachones cada 24 m (en cada vacío)</li>
+      <li><b>Bordes de calzada:</b> cada 18-24 m</li>
+      <li><b>Curvas peligrosas:</b> cada 6-10 m</li>
+    </ul>
+    <p><b>MOP Especificación:</b> tachones bidireccionales clase II en líneas de eje.</p>`
+  },
+  pctDefensa: {
+    titulo:'% del Tramo con Defensa Metálica',
+    cuerpo:`<p>Defensas (guardarriel) se colocan donde hay <b>riesgo de salida de vehículo</b>: terraplenes altos, curvas, obstáculos cercanos.</p>
+    <h3>Cómo estimar en campo</h3>
+    <ul>
+      <li><b>Terraplén > 3m:</b> defensa obligatoria · estimar % del tramo con esa altura</li>
+      <li><b>Curvas R<150m:</b> defensa recomendada en lado exterior</li>
+      <li><b>Cabezales de alcantarillas:</b> protección puntual</li>
+      <li>Recorrer tramo y contar km con defensa necesaria</li>
+    </ul>
+    <p><b>Típico:</b> 10-20% en vía plana, 30-50% en ondulada, 50-80% en montañosa.</p>`
+  },
+  pctSubdrenes: {
+    titulo:'% del Tramo con Subdrenes',
+    cuerpo:`<p>Subdrenes longitudinales se colocan donde hay <b>nivel freático alto</b> o <b>infiltración bajo pavimento</b>.</p>
+    <h3>Cómo estimar en campo</h3>
+    <ul>
+      <li><b>Plano con drenaje superficial bueno:</b> 10-30%</li>
+      <li><b>Ondulado con cortes:</b> 40-70% (cortes generan aguas)</li>
+      <li><b>Montañoso:</b> 70-100% (cunetas con subdrén)</li>
+      <li>Identificar tramos con: vegetación exuberante, manchas en pavimento, deformaciones</li>
+    </ul>
+    <p><b>MOP Sec. 605:</b> obligatorio en cortes >2m y donde N.F. < 1.5m bajo subrasante.</p>`
+  },
+  factCorteRell: {
+    titulo:'Factor Movimiento de Tierras',
+    cuerpo:`<p>Multiplicador del volumen base por <b>condiciones geométricas</b> (taludes, alturas).</p>
+    <h3>Lógica del factor</h3>
+    <ul>
+      <li>Volumen base por km depende del terreno: plano 8 m³/m, ondulado 35 m³/m, montañoso 110 m³/m</li>
+      <li>Taludes empinados (1:0.5) → menos volumen pero requieren muros</li>
+      <li>Taludes suaves (1:2) → más volumen pero estables</li>
+      <li>Factor 1.0 = condición típica · ajustar según experiencia local</li>
+    </ul>
+    <p><b>Calibración:</b> en proyectos panameños rurales el factor real suele estar entre 0.8 y 1.4.</p>`
+  },
+  alcantSep: {
+    titulo:'Separación entre Alcantarillas',
+    cuerpo:`<p>Distancia entre obras transversales de drenaje (tubos, cajones, box culverts).</p>
+    <h3>Cómo estimar en campo</h3>
+    <ul>
+      <li><b>Plano agrícola:</b> 1 cada 400-500 m</li>
+      <li><b>Ondulado:</b> 1 cada 200-300 m</li>
+      <li><b>Montañoso:</b> 1 cada 100-150 m (muchas cuencas pequeñas)</li>
+      <li>Identificar en campo: quebradas, depresiones, cauces naturales</li>
+      <li>Plano hidrológico: una por cada cuenca aportante</li>
+    </ul>
+    <p><b>MOP Hidrológico:</b> Tr=10 años caminos vecinales, Tr=25 años secundarias, Tr=50 años primarias.</p>`
+  },
+  pctIluminada: {
+    titulo:'% Tramo con Iluminación',
+    cuerpo:`<p>Iluminación vial con luminarias LED en postes (típicamente cada 25-35 m).</p>
+    <h3>Cómo estimar</h3>
+    <ul>
+      <li><b>Vías rurales sin tráfico nocturno:</b> 0%</li>
+      <li><b>Aproximaciones a poblados:</b> 10-20%</li>
+      <li><b>Vías urbanas:</b> 100%</li>
+      <li><b>Intersecciones:</b> obligatoria iluminación 200m antes/después</li>
+    </ul>
+    <p>Si la vía existente ya tiene iluminación, marcar 0% (no se considera en este presupuesto rehab básico).</p>`
+  },
+  mantRutinario: {
+    titulo:'Mantenimiento Rutinario Anual',
+    cuerpo:`<p>Limpieza, parcheo menor, pintura, poda, limpieza cunetas. Se ejecuta <b>todos los años</b>.</p>
+    <h3>Valores típicos (% del costo inicial)</h3>
+    <ul>
+      <li><b>Vías primarias asfalto:</b> 1.5-2.5% anual</li>
+      <li><b>Vías secundarias:</b> 1.0-2.0% anual</li>
+      <li><b>Caminos rurales:</b> 2.0-4.0% anual (más erosión)</li>
+      <li><b>Concreto:</b> 0.5-1.0% anual (menor mantenimiento)</li>
+    </ul>
+    <p><b>Referencia MOP APP:</b> contratos de mantenimiento por desempeño alrededor de 1.5-2% anual.</p>`
+  },
+  mantSello: {
+    titulo:'Sello / Microaglomerado',
+    cuerpo:`<p>Aplicación de capa delgada (5-15mm) para sellar fisuras y rejuvenecer la superficie. Se ejecuta <b>cada 5-7 años</b>.</p>
+    <h3>Cuándo aplicar</h3>
+    <ul>
+      <li>Fisuras tipo piel de cocodrilo incipientes</li>
+      <li>Pérdida de finos en superficie</li>
+      <li>Antes de que el deterioro estructural avance</li>
+    </ul>
+    <p><b>Costo típico:</b> 4-7% del costo inicial del pavimento. Vida útil: 5-7 años.</p>`
+  },
+  mantRefuerzo: {
+    titulo:'Refuerzo / Fresado + Sobrecarpeta',
+    cuerpo:`<p>Fresado de capa deteriorada + colocación de sobrecarpeta nueva (5-8 cm). Intervención <b>estructural mayor</b> cada 12-15 años.</p>
+    <h3>Cuándo aplicar</h3>
+    <ul>
+      <li>Ahuellamiento mayor a 25 mm</li>
+      <li>Fisuramiento extenso</li>
+      <li>IRI superior a 3.5 m/km</li>
+      <li>Deflexión Benkelman elevada</li>
+    </ul>
+    <p><b>Costo típico:</b> 25-35% del costo inicial. Vida útil: 12-15 años adicionales.</p>`
+  },
+  mantReconstruccion: {
+    titulo:'Reconstrucción Parcial',
+    cuerpo:`<p>Intervención mayor: fresado profundo + reciclado base + nueva estructura. Cada <b>20-25 años</b>.</p>
+    <h3>Cuándo aplicar</h3>
+    <ul>
+      <li>Pavimento agotado estructuralmente</li>
+      <li>PCI menor a 30</li>
+      <li>Múltiples capas de refuerzo previas sin éxito</li>
+    </ul>
+    <p><b>Costo típico:</b> 60-80% del costo inicial. Equivale a "casi nuevo".</p>`
+  },
+  tasaDescuento: {
+    titulo:'Tasa de Descuento',
+    cuerpo:`<p>Tasa para llevar flujos futuros a valor presente. Refleja costo de oportunidad del capital.</p>
+    <h3>Valores típicos Panamá</h3>
+    <ul>
+      <li><b>Sector público:</b> 8-10% (BID, Banco Mundial usan 12%)</li>
+      <li><b>Sector privado:</b> 12-15%</li>
+      <li><b>Proyectos APP:</b> 9-11%</li>
+      <li><b>Sin inflación (real):</b> usar tasa real 6-8%</li>
+    </ul>
+    <p>A mayor tasa, menos peso tienen los costos futuros en el VPN. La SENADAP recomienda <b>8%</b> para evaluación social.</p>`
+  }
+};
+
+/* ════════════════════════════════════════════════════════════════════════
+   ESTADO GLOBAL
+   ════════════════════════════════════════════════════════════════════════ */
+
+const userPrices = {};
+const userSources = {};
+PARTIDAS.forEach(p => { userPrices[p.id] = p.ref; userSources[p.id] = p.fuente; });
+
+const state = {
+  // Identificación
+  prjNombre:'', prjCliente:'', prjResp:'', prjProv:'cocle',
+  prjFecha: new Date().toISOString().split('T')[0],
+  
+  // Geometría
+  tipo:'rehab',
+  L: 5.0, vd: 60, TPDA: 3000, cam: 10,
+  terPlano: 40, terOndu: 40, terMont: 20,
+  w: 3.5, car: 2, berma: 1.5,
+  eR_cm: 10, eB_cm: 20, eS_cm: 25, eSC_cm: 6,
+  tc: 1.0, tr: 1.5,
+  
+  // Parámetros EDITABLES (porcentajes y separaciones)
+  // Volúmenes
+  pctCorte: 60,
+  pctRelleno: 40,
+  factCorte: 1.0,
+  factRelleno: 1.0,
+  // Drenaje longitudinal
+  pctCordonCuneta: 70,
+  pctSubdrenes: 60,
+  // Alcantarillas (separación)
+  alcantSep: 200,  // m entre alcantarillas
+  // Señalización
+  sepSenales: 250,  // m entre señales
+  sepRPM: 20,  // m entre tachones
+  nLineas: 3,  // # líneas de pintura
+  // Seguridad
+  pctDefensa: 20,  // % del tramo con defensa
+  pctBarreraConcr: 0,  // % con barrera New Jersey
+  // Otros
+  pctIluminada: 0,
+  factAsfaltoDens: 2.4,  // t/m³ densidad asfalto
+  
+  // Mantenimiento (TODO editable)
+  mantHorizonte: 20,  // años
+  mantTasa: 8,  // %
+  mantInflacion: 3,  // %
+  
+  // Eventos editables - cada uno con año, % del costo inicial, descripción
+  mantEventos: [
+    {id:'rut', desc:'Mantenimiento rutinario', anoInicio:1, anoFin:20, periodo:1, pctCosto:1.5, activo:true},
+    {id:'sello1', desc:'Primer sello / microaglomerado', anoInicio:6, anoFin:6, periodo:0, pctCosto:5, activo:true},
+    {id:'sello2', desc:'Segundo sello', anoInicio:12, anoFin:12, periodo:0, pctCosto:5, activo:true},
+    {id:'refuerzo', desc:'Fresado + sobrecarpeta', anoInicio:15, anoFin:15, periodo:0, pctCosto:30, activo:true},
+    {id:'reconst', desc:'Reconstrucción parcial', anoInicio:25, anoFin:25, periodo:0, pctCosto:70, activo:false},
+  ],
+  
+  // Drenaje transversal (lista de estructuras)
+  drenajeTrans: [],
+};
+
+// inicializar drenaje según L y terreno
+function initDrenaje(){
+  const n = Math.max(1, Math.ceil((state.L*1000)/state.alcantSep));
+  const arr = [];
+  for(let i=0;i<n;i++){
+    arr.push({
+      tipo: 'tubo_36',
+      cantidad: 1,
+      longitud: state.w*state.car + 2*state.berma + 2,  // ancho plataforma + sobreancho
+      diametro: 0.9,  // Ø36" = 0.91m
+      ancho: 2.0,
+      alto: 2.0,
+    });
+  }
+  state.drenajeTrans = arr;
+}
+initDrenaje();
+
+/* ════════════════════════════════════════════════════════════════════════
+   UTILIDADES
+   ════════════════════════════════════════════════════════════════════════ */
+
+function fmt(n,d=1){if(n===null||isNaN(n))return '—';return Number(n).toFixed(d)}
+function fmtMoney(n){
+  if(n===null||isNaN(n))return 'B/. —';
+  if(Math.abs(n)>=1e6)return 'B/. '+fmt(n/1e6,2)+'M';
+  if(Math.abs(n)>=1e3)return 'B/. '+fmt(n/1e3,0)+'K';
+  return 'B/. '+fmt(n,0);
+}
+function fmtMoneyFull(n){
+  if(n===null||isNaN(n))return 'B/. —';
+  return 'B/. ' + Math.round(n).toLocaleString('en-US');
+}
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function showHelp(key){
+  const h = HELP[key];
+  if(!h) return;
+  document.getElementById('help-title').textContent = h.titulo;
+  document.getElementById('help-body').innerHTML = h.cuerpo;
+  openModal('modal-help');
+}
+function toast(msg, type='good'){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   CÁLCULO DE CANTIDADES
+   ════════════════════════════════════════════════════════════════════════ */
+
+function calcQuantities(){
+  const L_m = state.L * 1000;
+  const anchoCalzada = state.w * state.car;
+  const anchoTotal = anchoCalzada + 2*state.berma;
+  
+  // Volúmenes base por terreno (m³ por m lineal de vía típica 10m ancho)
+  const volBasePlano = 8, volBaseOndu = 35, volBaseMont = 110;
+  const Fancho = anchoTotal/10;
+  
+  const Lp = L_m * state.terPlano/100;
+  const Lo = L_m * state.terOndu/100;
+  const Lm = L_m * state.terMont/100;
+  
+  const volTierraTotal = (volBasePlano*Lp + volBaseOndu*Lo + volBaseMont*Lm) * Fancho;
+  
+  const volCorte = volTierraTotal * (state.pctCorte/100) * state.factCorte;
+  const volRell = volTierraTotal * (state.pctRelleno/100) * state.factRelleno;
+  
+  const lMuros = (state.tc < 0.5 && state.terMont > 30) ? Lm * 0.3 : 0;
+  
+  // Pavimento volúmenes
+  const vol_asf_m3 = (state.eR_cm/100) * anchoCalzada * L_m;
+  const vol_asf_ton = vol_asf_m3 * state.factAsfaltoDens;
+  const vol_base = (state.eB_cm/100) * (anchoCalzada + 0.30) * L_m;
+  const vol_subbase = (state.eS_cm/100) * (anchoCalzada + 0.60) * L_m;
+  const area_imprim = (anchoCalzada + 0.30) * L_m;
+  const area_fresado = anchoCalzada * L_m;
+  
+  // Drenaje longitudinal
+  const m_cordoncuneta = L_m * 2 * (state.pctCordonCuneta/100);
+  const m_cordonsimple = L_m * 2 * ((100-state.pctCordonCuneta)/100);
+  const m_subdrenes = L_m * (state.pctSubdrenes/100);
+  
+  // Drenaje transversal - calcular según lista de estructuras
+  const drenT = calcDrenajeTransversal();
+  
+  // Señalización
+  const m_pintura = L_m * state.nLineas;
+  const n_senales = Math.max(1, Math.ceil(L_m / state.sepSenales));
+  const n_rpm = Math.max(1, Math.ceil(L_m / state.sepRPM));
+  
+  // Seguridad
+  const m_defensa = L_m * (state.pctDefensa/100);
+  const m_barrera = L_m * (state.pctBarreraConcr/100);
+  
+  // Preliminares
+  const m2_limpieza = L_m * (anchoTotal + 4);
+  const m_replanteo = L_m;
+  
+  return {
+    limpieza: m2_limpieza,
+    replanteo: m_replanteo,
+    excav_retro: volCorte,
+    relleno_sel: volRell,
+    muros: lMuros,
+    subbase: vol_subbase,
+    base_gran: vol_base,
+    imprimacion: area_imprim,
+    asfalto_ton: vol_asf_ton,
+    concr_pav: 0,
+    fresado: (state.tipo==='rehab' || state.tipo==='ambas') ? area_fresado : 0,
+    sello: 0,
+    cordon_cuneta: m_cordoncuneta,
+    cordon_simple: m_cordonsimple,
+    subdrenes: m_subdrenes,
+    tubo_concr_24: drenT.tubo_24,
+    tubo_concr_36: drenT.tubo_36,
+    tubo_concr_48: drenT.tubo_48,
+    tubo_concr_60: drenT.tubo_60,
+    cajon_concr: drenT.cajon,
+    box_culvert: drenT.box,
+    puente_concr: drenT.puente_concr,
+    puente_acero: drenT.puente_acero,
+    puente_mixto: drenT.puente_mixto,
+    cabezal: drenT.cabezales,
+    pintura_h: m_pintura,
+    senal_vert: n_senales,
+    rpm: n_rpm,
+    defensa_met: m_defensa,
+    barrera_concr: m_barrera,
+    _resumen: {
+      volCorte, volRell, anchoCalzada, anchoTotal, lMuros,
+      Lp:Lp/1000, Lo:Lo/1000, Lm:Lm/1000,
+      vol_asf_m3, vol_asf_ton,
+      nAlcantarillas: state.drenajeTrans.length
+    }
+  };
+}
+
+function calcDrenajeTransversal(){
+  const r = {tubo_24:0, tubo_36:0, tubo_48:0, tubo_60:0, cajon:0, box:0, puente_concr:0, puente_acero:0, puente_mixto:0, cabezales:0, lumpSum:0};
+  state.drenajeTrans.forEach(d => {
+    const cant = d.cantidad || 1;
+    const L = d.longitud || 0;
+    const W = d.ancho || 0;
+    const H = d.alto || 0;
+    
+    // Si modo precio fijo, acumular lump sum y NO sumar a cantidades por unidad
+    if(d.modoPrecio === 'fijo'){
+      r.lumpSum += (d.precioFijo || 0) * cant;
+      // Aún así cuenta cabezales para tubos/cajón/box (en modo fijo asumimos que el precio fijo incluye o no según APU del usuario)
+      // Por simplicidad: si el usuario puso precio fijo, ya incluye cabezales. No los agregamos extra.
+      return;
+    }
+    
+    // Modo por unidad de medida
+    if(d.tipo === 'tubo_24') r.tubo_24 += L * cant;
+    else if(d.tipo === 'tubo_36') r.tubo_36 += L * cant;
+    else if(d.tipo === 'tubo_48') r.tubo_48 += L * cant;
+    else if(d.tipo === 'tubo_60') r.tubo_60 += L * cant;
+    else if(d.tipo === 'cajon') r.cajon += L * W * H * cant;
+    else if(d.tipo === 'box') r.box += L * W * H * cant;
+    else if(d.tipo === 'puente_concr') r.puente_concr += L * W * cant;
+    else if(d.tipo === 'puente_acero') r.puente_acero += L * W * cant;
+    else if(d.tipo === 'puente_mixto') r.puente_mixto += L * W * cant;
+    
+    // cabezales solo para tubos, cajones y box en modo por unidad (no puentes, no modo fijo)
+    if((d.tipo && d.tipo.startsWith('tubo_')) || d.tipo === 'cajon' || d.tipo === 'box'){
+      r.cabezales += 2 * cant;
+    }
+  });
+  return r;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   CÁLCULO DE COSTOS
+   ════════════════════════════════════════════════════════════════════════ */
+
+function calcCosts(){
+  const qty = calcQuantities();
+  const items = [];
+  let subtotal = 0;
+  
+  PARTIDAS.forEach(p => {
+    if(p.unidad === '%') return;
+    const cantidad = qty[p.id] || 0;
+    const precio = userPrices[p.id];
+    
+    if(cantidad > 0 && precio !== null && precio > 0){
+      const total = cantidad * precio;
+      subtotal += total;
+      items.push({
+        id: p.id, nombre: p.nombre, capitulo: p.cap, unidad: p.unidad,
+        cantidad, precio, total, fuente: userSources[p.id] || ''
+      });
+    } else if(cantidad > 0){
+      items.push({
+        id: p.id, nombre: p.nombre, capitulo: p.cap, unidad: p.unidad,
+        cantidad, precio: null, total: 0, fuente: '⚠ SIN PRECIO', missing: true
+      });
+    }
+  });
+  
+  // Estructuras de drenaje con precio fijo (lump sum) - se agregan como partida virtual
+  const drenT = calcDrenajeTransversal();
+  if(drenT.lumpSum > 0){
+    const estructurasFijas = state.drenajeTrans.filter(d => d.modoPrecio === 'fijo');
+    const cantTotal = estructurasFijas.reduce((s,d)=>s + (d.cantidad||1), 0);
+    // detalles para mostrar
+    const detalles = estructurasFijas.map(d => {
+      const c = d.cantidad || 1;
+      const p = d.precioFijo || 0;
+      const tipo = (d.tipo || '').replace('tubo_','Tubo Ø').replace('cajon','Cajón').replace('box','Box culvert').replace('puente_','Puente ');
+      return `${c}× ${tipo}`;
+    }).join(' + ');
+    subtotal += drenT.lumpSum;
+    items.push({
+      id:'estr_fija', nombre:'Estructura(s) drenaje con precio total fijo', capitulo:'drenaje', unidad:'gbl',
+      cantidad: cantTotal, precio: drenT.lumpSum / cantTotal, total: drenT.lumpSum,
+      fuente: 'Precio fijo ingresado por usuario · ' + detalles
+    });
+  }
+  
+  const adminPct = userPrices.admin_pct;
+  const isvPct = userPrices.isv_pct;
+  let cAdmin = 0, cIsv = 0;
+  if(adminPct > 0){
+    cAdmin = subtotal * (adminPct/100);
+    items.push({id:'admin_pct', nombre:'Administración + Imprevistos', capitulo:'admin', unidad:adminPct+'%', cantidad:1, precio:cAdmin, total:cAdmin, fuente:userSources.admin_pct});
+  }
+  if(isvPct > 0){
+    cIsv = subtotal * (isvPct/100);
+    items.push({id:'isv_pct', nombre:'Estudios + Supervisión + ITBMS', capitulo:'admin', unidad:isvPct+'%', cantidad:1, precio:cIsv, total:cIsv, fuente:userSources.isv_pct});
+  }
+  
+  const total = subtotal + cAdmin + cIsv;
+  return {items, subtotal, total, qty, totalPorKm: total/state.L};
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   MANTENIMIENTO LCC
+   ════════════════════════════════════════════════════════════════════════ */
+
+function calcMantenimiento(costoInicial){
+  const horizonte = state.mantHorizonte;
+  const tasa = state.mantTasa / 100;
+  const infl = state.mantInflacion / 100;
+  
+  // flujos anuales
+  const flujos = new Array(horizonte + 1).fill(0);
+  flujos[0] = costoInicial;
+  
+  state.mantEventos.forEach(ev => {
+    if(!ev.activo) return;
+    const monto_base = costoInicial * (ev.pctCosto/100);
+    
+    if(ev.periodo > 0){
+      // recurrente
+      for(let a = ev.anoInicio; a <= Math.min(horizonte, ev.anoFin); a += ev.periodo){
+        if(a >= 1 && a <= horizonte){
+          const monto_infl = monto_base * Math.pow(1+infl, a);
+          flujos[a] += monto_infl;
+        }
+      }
+    } else {
+      // único
+      if(ev.anoInicio >= 1 && ev.anoInicio <= horizonte){
+        const monto_infl = monto_base * Math.pow(1+infl, ev.anoInicio);
+        flujos[ev.anoInicio] += monto_infl;
+      }
+    }
+  });
+  
+  // VPN
+  let vpn_mant = 0;
+  for(let a = 1; a <= horizonte; a++){
+    vpn_mant += flujos[a] / Math.pow(1+tasa, a);
+  }
+  
+  const total_mant_nominal = flujos.slice(1).reduce((s,x)=>s+x, 0);
+  const costo_ciclo_total = costoInicial + vpn_mant;
+  const anualidad = vpn_mant * tasa / (1 - Math.pow(1+tasa, -horizonte));
+  
+  return {
+    flujos, vpn_mant, total_mant_nominal,
+    costo_ciclo_total, anualidad,
+    porKm_inicial: costoInicial / state.L,
+    porKm_anual_mant: anualidad / state.L,
+    porKm_total: costo_ciclo_total / state.L
+  };
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   RENDER SIDEBAR
+   ════════════════════════════════════════════════════════════════════════ */
+
+function renderSidebar(){
+  const html = `
+    <div class="group">
+      <div class="group-head">Identificación</div>
+      <div class="group-body">
+        <div class="field"><label>Nombre proyecto</label><input type="text" id="in-prj" value="${state.prjNombre}" placeholder="Rehab. vía X-Y"></div>
+        <div class="field">
+          <label>Provincia</label>
+          <select id="in-prov">
+            <option value="panama">Panamá</option><option value="oeste">Panamá Oeste</option>
+            <option value="colon">Colón</option><option value="cocle" ${state.prjProv==='cocle'?'selected':''}>Coclé</option>
+            <option value="herrera">Herrera</option><option value="los-santos">Los Santos</option>
+            <option value="veraguas">Veraguas</option><option value="chiriqui">Chiriquí</option>
+            <option value="bocas">Bocas del Toro</option><option value="darien">Darién</option>
+            <option value="comarca">Ngäbe-Buglé</option>
+          </select>
+        </div>
+        <div class="field"><label>Responsable</label><input type="text" id="in-resp" value="${state.prjResp}" placeholder="Ing. ... · Empresa / Consultora"></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-head">Características Geométricas</div>
+      <div class="group-body">
+        <div class="field">
+          <label>Tipo intervención</label>
+          <select id="in-tipo">
+            <option value="nueva" ${state.tipo==='nueva'?'selected':''}>Carretera nueva</option>
+            <option value="rehab" ${state.tipo==='rehab'?'selected':''}>Rehabilitación</option>
+            <option value="ambas" ${state.tipo==='ambas'?'selected':''}>Mixta</option>
+          </select>
+        </div>
+        <div class="field"><label>Longitud <span class="v">${fmt(state.L,1)} km</span></label><input type="range" id="in-L" min="0.5" max="30" step="0.5" value="${state.L}"></div>
+        <div class="field"><label>V diseño <span class="v">${state.vd} km/h</span></label><input type="range" id="in-vd" min="30" max="120" step="10" value="${state.vd}"></div>
+        <div class="field"><label>TPDA <span class="v">${state.TPDA} v/d · ${state.cam}% cam</span></label><input type="range" id="in-tpda" min="200" max="20000" step="200" value="${state.TPDA}"><input type="range" id="in-cam" min="2" max="40" step="1" value="${state.cam}" style="margin-top:5px"></div>
+        
+        <div class="field"><label>Topografía mixta <span style="font-family:'IBM Plex Mono';font-size:9px;color:var(--ink-3)">(debe sumar 100%)</span></label>
+          <div class="terrain-grid">
+            <div class="cell"><label>Plano %</label><input type="number" id="ter-p" min="0" max="100" value="${state.terPlano}"></div>
+            <div class="cell"><label>Ondu %</label><input type="number" id="ter-o" min="0" max="100" value="${state.terOndu}"></div>
+            <div class="cell"><label>Mont %</label><input type="number" id="ter-m" min="0" max="100" value="${state.terMont}"></div>
+          </div>
+          <div id="ter-total-row" style="font-family:'IBM Plex Mono';font-size:10px;text-align:right;margin-top:5px;font-weight:700">
+            <span style="color:${(state.terPlano+state.terOndu+state.terMont)===100 ? 'var(--good)' : 'var(--bad)'}">
+              Total: ${state.terPlano+state.terOndu+state.terMont}% ${(state.terPlano+state.terOndu+state.terMont)===100 ? '✓' : '⚠ debe ser 100%'}
+            </span>
+          </div>
+        </div>
+        
+        <div class="field"><label>Ancho carril <span class="v">${fmt(state.w,1)} m</span></label><input type="range" id="in-w" min="2.7" max="3.7" step="0.1" value="${state.w}"></div>
+        <div class="field"><label>Carriles totales <span class="v">${state.car}</span></label><input type="range" id="in-car" min="2" max="6" step="2" value="${state.car}"></div>
+        <div class="field"><label>Hombro <span class="v">${fmt(state.berma,1)} m</span></label><input type="range" id="in-berma" min="0" max="3.0" step="0.1" value="${state.berma}"></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-head">Paquete Estructural</div>
+      <div class="group-body">
+        <div class="field"><label>Rodadura <span class="v">${state.eR_cm} cm</span></label><input type="range" id="in-eR" min="5" max="30" step="1" value="${state.eR_cm}"></div>
+        <div class="field"><label>Base granular <span class="v">${state.eB_cm} cm</span></label><input type="range" id="in-eB" min="10" max="40" step="1" value="${state.eB_cm}"></div>
+        <div class="field"><label>Sub-base <span class="v">${state.eS_cm} cm</span></label><input type="range" id="in-eS" min="10" max="60" step="1" value="${state.eS_cm}"></div>
+        <div class="field"><label>Rehab: sobrecarpeta <span class="v">${state.eSC_cm} cm</span></label><input type="range" id="in-eSC" min="3" max="15" step="1" value="${state.eSC_cm}"></div>
+        <div class="field"><label>Talud corte 1:<span class="v">${fmt(state.tc,2)}</span></label><input type="range" id="in-tc" min="0.25" max="2.0" step="0.25" value="${state.tc}"></div>
+        <div class="field"><label>Talud relleno 1:<span class="v">${fmt(state.tr,2)}</span></label><input type="range" id="in-tr" min="1.0" max="3.0" step="0.25" value="${state.tr}"></div>
+      </div>
+    </div>
+
+    <div class="export-bar">
+      <button id="btn-recalc">Recalcular</button>
+    </div>
+
+    <div style="margin-top:14px;padding:14px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:6px;color:#fff">
+      <div style="font-family:'IBM Plex Mono';font-size:9px;text-transform:uppercase;letter-spacing:0.15em;opacity:0.85;margin-bottom:5px">¿Necesitas diseño definitivo?</div>
+      <p style="font-size:11px;line-height:1.5;margin-bottom:10px;opacity:0.95">Para topografía, diseño geométrico, hidrología, APUs específicos o supervisión, contáctanos.</p>
+      <a href="mailto:lmarquez@lmmingenieria.com?subject=Consulta%20EOM%20Vial" 
+         style="display:block;background:#fff;color:var(--primary);padding:8px 12px;border-radius:4px;text-decoration:none;font-family:'IBM Plex Mono';font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;text-align:center">
+        ✉ Contactar LMM
+      </a>
+      <div style="margin-top:6px;font-family:'IBM Plex Mono';font-size:9px;opacity:0.85;text-align:center">lmarquez@lmmingenieria.com</div>
+    </div>
+  `;
+  document.getElementById('sidebar').innerHTML = html;
+  bindSidebar();
+}
+
+function bindSidebar(){
+  const map = {
+    'in-prj':['prjNombre','text'],'in-resp':['prjResp','text'],'in-prov':['prjProv','text'],
+    'in-tipo':['tipo','text'],
+    'in-L':['L','num',v=>fmt(v,1)+' km'],'in-vd':['vd','num',v=>v+' km/h'],
+    'in-tpda':['TPDA','num',v=>v+' v/d · '+state.cam+'% cam','vTpda'],
+    'in-cam':['cam','num',v=>state.TPDA+' v/d · '+v+'% cam','vTpda'],
+    'ter-p':['terPlano','num'],'ter-o':['terOndu','num'],'ter-m':['terMont','num'],
+    'in-w':['w','num',v=>fmt(v,1)+' m'],'in-car':['car','num',v=>v],'in-berma':['berma','num',v=>fmt(v,1)+' m'],
+    'in-eR':['eR_cm','num',v=>v+' cm'],'in-eB':['eB_cm','num',v=>v+' cm'],
+    'in-eS':['eS_cm','num',v=>v+' cm'],'in-eSC':['eSC_cm','num',v=>v+' cm'],
+    'in-tc':['tc','num',v=>fmt(v,2)],'in-tr':['tr','num',v=>fmt(v,2)],
+  };
+  Object.entries(map).forEach(([id,[k,t,labFn]])=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('input',()=>{
+      let v = el.value;
+      if(t==='num') v = +v;
+      state[k] = v;
+      // Actualizar etiqueta del slider sin re-render
+      if(labFn){
+        const lab = el.previousElementSibling;
+        if(lab && lab.querySelector('.v')) lab.querySelector('.v').textContent = labFn(v);
+      }
+      // Si cambia un slider relacionado (tpda+cam), actualizar el otro label también
+      if(id === 'in-tpda' || id === 'in-cam'){
+        const labTpda = document.getElementById('in-tpda').previousElementSibling;
+        const txt = state.TPDA + ' v/d · ' + state.cam + '% cam';
+        if(labTpda && labTpda.querySelector('.v')) labTpda.querySelector('.v').textContent = txt;
+      }
+      // Si cambia topografía, actualizar indicador 100% en vivo
+      if(id === 'ter-p' || id === 'ter-o' || id === 'ter-m'){
+        const tot = state.terPlano + state.terOndu + state.terMont;
+        const row = document.getElementById('ter-total-row');
+        if(row){
+          const ok = tot === 100;
+          row.innerHTML = `<span style="color:${ok?'var(--good)':'var(--bad)'}">Total: ${tot}% ${ok?'✓':'⚠ debe ser 100%'}</span>`;
+        }
+        // Solo recalcular si suma 100, para no mostrar valores inconsistentes
+        if(tot !== 100) return;
+      }
+      // Re-renderizar resto SIN tocar sidebar
+      renderOthers('sidebar');
+    });
+  });
+  document.getElementById('btn-recalc').addEventListener('click', renderAll);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   RENDER TABS
+   ════════════════════════════════════════════════════════════════════════ */
+
+function renderDatos(){
+  const r = calcCosts();
+  const m = calcMantenimiento(r.total);
+  const q = r.qty._resumen;
+  
+  const missing = r.items.filter(it => it.missing).length;
+  const totalQty = r.items.length;
+  const conFuente = r.items.filter(it => !it.missing && it.fuente && !it.fuente.startsWith('⚠')).length;
+  const auditPct = totalQty > 0 ? Math.round(conFuente/totalQty * 100) : 0;
+  
+  const html = `
+    <div class="refs-block">
+      <h4>● Resumen ejecutivo del proyecto</h4>
+      <p><b>${state.prjNombre || 'Sin nombre asignado'}</b> · Provincia ${state.prjProv} · ${state.L} km · 
+      V=${state.vd} km/h · TPDA ${state.TPDA} (${state.cam}% camiones) · 
+      ${state.tipo === 'rehab' ? 'Rehabilitación' : state.tipo === 'nueva' ? 'Construcción nueva' : 'Intervención mixta'}</p>
+      <p>Topografía: ${state.terPlano}% plano · ${state.terOndu}% ondulado · ${state.terMont}% montañoso · 
+      Plataforma ${fmt(q.anchoTotal,1)} m</p>
+    </div>
+
+    <div class="hero">
+      <div class="hero-grid">
+        <div class="cost-block">
+          <div class="label">Costo Inicial Estimado</div>
+          <div class="num">${fmtMoney(r.total)}</div>
+          <div class="perKm">por km: <b>${fmtMoneyFull(r.totalPorKm)}</b></div>
+          <div class="delta">${missing > 0 
+            ? `<span style="color:var(--warn)">⚠ ${missing} partida(s) sin precio</span>` 
+            : `<span style="color:var(--good)">✓ Cálculo completo</span>`}</div>
+        </div>
+        <div class="cost-block">
+          <div class="label">Mantenimiento ${state.mantHorizonte} años (VPN)</div>
+          <div class="num a">${fmtMoney(m.vpn_mant)}</div>
+          <div class="perKm">anualidad equivalente: <b>${fmtMoney(m.anualidad)}/año</b></div>
+          <div class="delta" style="border-left-color:var(--accent)">Tasa descuento ${state.mantTasa}% · inflación ${state.mantInflacion}%</div>
+        </div>
+        <div class="cost-block">
+          <div class="label">Costo Ciclo Vida Total</div>
+          <div class="num w">${fmtMoney(m.costo_ciclo_total)}</div>
+          <div class="perKm">por km/año: <b>${fmtMoney(m.porKm_total/state.mantHorizonte)}</b></div>
+          <div class="delta" style="border-left-color:var(--warn)">Inicial + Mantenimiento (VPN)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi b"><div class="l">Auditabilidad</div><div class="n">${auditPct}<span class="unit">%</span></div><div class="sub">${conFuente}/${totalQty} con fuente</div></div>
+      <div class="kpi a"><div class="l">Mov. tierras</div><div class="n">${fmt(q.volCorte/1000,1)}<span class="unit">k m³</span></div><div class="sub">${fmt(q.volRell/1000,1)}k relleno</div></div>
+      <div class="kpi l"><div class="l">Volumen asfalto</div><div class="n">${fmt(q.vol_asf_ton,0)}<span class="unit">ton</span></div><div class="sub">${fmt(q.vol_asf_m3,0)} m³ × ${state.factAsfaltoDens} t/m³</div></div>
+      <div class="kpi g"><div class="l">Plataforma</div><div class="n">${fmt(q.anchoTotal,1)}<span class="unit">m</span></div><div class="sub">calzada ${fmt(q.anchoCalzada,1)}m + hombros</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Guía rápida de uso</h2><span class="tag">flujo recomendado</span></div>
+      <div class="panel-body" style="font-size:13px;line-height:1.6;color:var(--ink-2)">
+        <p><b style="color:var(--primary)">1.</b> Configura geometría en la barra lateral (longitud, sección, topografía)</p>
+        <p><b style="color:var(--primary)">2.</b> Revisa y ajusta porcentajes/separaciones en pestaña <b>02 Volúmenes</b> según trabajo de campo</p>
+        <p><b style="color:var(--primary)">3.</b> Define estructuras de drenaje transversal en pestaña <b>03</b> (tubos, cajones, puentes, box culvert)</p>
+        <p><b style="color:var(--primary)">4.</b> Verifica/edita precios unitarios en pestaña <b>04</b> (valores Contraloría Panamá V10.4 precargados)</p>
+        <p><b style="color:var(--primary)">5.</b> Configura mantenimiento ciclo vida en pestaña <b>06</b> (eventos, años, % editables)</p>
+        <p><b style="color:var(--primary)">6.</b> Compara con benchmarks Panamá en pestaña <b>07</b> y genera reporte PDF</p>
+      </div>
+    </div>
+  `;
+  document.getElementById('tab-datos').innerHTML = html;
+}
+
+function renderCantidades(){
+  const q = calcQuantities();
+  const res = q._resumen;
+  
+  // Crear filas editables
+  const params = [
+    {k:'pctCorte', lab:'% Corte (vs Relleno)', unit:'%', help:'pctCorte', sub:'Volumen tierra → corte'},
+    {k:'pctRelleno', lab:'% Relleno (vs Corte)', unit:'%', help:'pctCorte', sub:'Volumen tierra → relleno'},
+    {k:'factCorte', lab:'Factor ajuste corte', unit:'×', help:'factCorteRell', sub:'Multiplicador volumen base'},
+    {k:'factRelleno', lab:'Factor ajuste relleno', unit:'×', help:'factCorteRell', sub:'Multiplicador volumen base'},
+    {k:'pctCordonCuneta', lab:'% Cordón cuneta', unit:'%', help:'pctCordonCuneta', sub:'Resto será cordón simple'},
+    {k:'pctSubdrenes', lab:'% Tramo con subdrenes', unit:'%', help:'pctSubdrenes', sub:'Longitud subdrenes / L total'},
+    {k:'sepSenales', lab:'Separación señales', unit:'m', help:'sepSenales', sub:'1 señal cada X metros'},
+    {k:'sepRPM', lab:'Separación tachones (RPM)', unit:'m', help:'sepRPM', sub:'1 tachón cada X metros'},
+    {k:'nLineas', lab:'# Líneas de pintura', unit:'líneas', help:null, sub:'Eje + bordes (típico 3)'},
+    {k:'pctDefensa', lab:'% Tramo con defensa metálica', unit:'%', help:'pctDefensa', sub:'Guardarriel metálico'},
+    {k:'pctBarreraConcr', lab:'% Tramo con barrera New Jersey', unit:'%', help:'pctDefensa', sub:'Solo en separadores centrales'},
+    {k:'factAsfaltoDens', lab:'Densidad asfalto compactado', unit:'t/m³', help:null, sub:'Típico 2.30-2.45 t/m³'},
+  ];
+  
+  let editHtml = '<div class="editable-grid">';
+  params.forEach(p => {
+    editHtml += `
+      <div class="edit-row">
+        <div class="lab">${p.lab}<small>${p.sub}</small></div>
+        <input type="number" step="0.1" value="${state[p.k]}" data-k="${p.k}" class="param-input">
+        ${p.help ? `<button class="help" onclick="showHelp('${p.help}')">?</button>` : '<span></span>'}
+      </div>
+    `;
+  });
+  editHtml += '</div>';
+
+  // Tabla de cantidades calculadas
+  let tblHtml = `<table class="audit">
+    <thead><tr><th>Partida</th><th>Unidad</th><th class="right">Cantidad</th><th>Lógica de cálculo</th></tr></thead>
+    <tbody>`;
+
+  const calcRefs = {
+    limpieza: `L × (${fmt(res.anchoTotal,1)}m + 4m margen)`,
+    replanteo: `L = ${state.L*1000}m`,
+    excav_retro: `Vol base × ${state.pctCorte}% corte × factor ${state.factCorte}`,
+    relleno_sel: `Vol base × ${state.pctRelleno}% relleno × factor ${state.factRelleno}`,
+    muros: state.tc<0.5 && state.terMont>30 ? `30% del tramo montañoso` : 'N/A',
+    subbase: `${state.eS_cm}cm × (calzada+0.60m) × L`,
+    base_gran: `${state.eB_cm}cm × (calzada+0.30m) × L`,
+    imprimacion: `Área pavimento + 0.30m`,
+    asfalto_ton: `${state.eR_cm}cm × calzada × L × ${state.factAsfaltoDens}t/m³`,
+    fresado: state.tipo!=='nueva' ? `Calzada × L completa` : 'N/A',
+    cordon_cuneta: `L × 2 lados × ${state.pctCordonCuneta}%`,
+    cordon_simple: `L × 2 lados × ${100-state.pctCordonCuneta}%`,
+    subdrenes: `L × ${state.pctSubdrenes}%`,
+    pintura_h: `L × ${state.nLineas} líneas`,
+    senal_vert: `L / ${state.sepSenales}m`,
+    rpm: `L / ${state.sepRPM}m`,
+    defensa_met: `L × ${state.pctDefensa}%`,
+    barrera_concr: `L × ${state.pctBarreraConcr}%`,
+  };
+
+  PARTIDAS.forEach(p => {
+    if(p.unidad === '%') return;
+    const cant = q[p.id];
+    if(cant > 0){
+      tblHtml += `<tr>
+        <td>${p.nombre}</td>
+        <td>${p.unidad}</td>
+        <td class="right num">${fmt(cant, cant<10?2:0)}</td>
+        <td class="src">${calcRefs[p.id] || '—'}</td>
+      </tr>`;
+    }
+  });
+  tblHtml += '</tbody></table>';
+
+  document.getElementById('tab-cantidades').innerHTML = `
+    <div class="refs-block">
+      <h4>● Edita los porcentajes y separaciones según trabajo de campo</h4>
+      <p>Todos los parámetros son <b>editables</b>. Si en campo identificas valores distintos (más alcantarillas, menos defensa, etc.), 
+      modifícalos aquí. El botón <b>?</b> explica cómo estimar cada uno.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Parámetros editables <small>— ajusta según campo</small></h2><span class="tag">Click ? para guía</span></div>
+      <div class="panel-body">${editHtml}</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Cantidades calculadas <small>— con la lógica aplicada</small></h2><span class="tag">Auto-calculado</span></div>
+      <div class="panel-body" style="padding:0;overflow-x:auto">${tblHtml}</div>
+    </div>
+  `;
+  
+  // bindings
+  document.querySelectorAll('.param-input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      state[e.target.dataset.k] = +e.target.value;
+      renderOthers('cantidades');
+    });
+  });
+}
+
+function renderDrenaje(){
+  const TIPOS_DRN = {
+    tubo_24: {label:'Tubo Ø24"', precioId:'tubo_concr_24', metric:'lineal', diametroDef:0.61},
+    tubo_36: {label:'Tubo Ø36"', precioId:'tubo_concr_36', metric:'lineal', diametroDef:0.91},
+    tubo_48: {label:'Tubo Ø48"', precioId:'tubo_concr_48', metric:'lineal', diametroDef:1.22},
+    tubo_60: {label:'Tubo Ø60"', precioId:'tubo_concr_60', metric:'lineal', diametroDef:1.52},
+    cajon: {label:'Cajón concreto', precioId:'cajon_concr', metric:'volumen'},
+    box: {label:'Box culvert', precioId:'box_culvert', metric:'volumen'},
+    puente_concr: {label:'Puente concreto', precioId:'puente_concr', metric:'area'},
+    puente_acero: {label:'Puente acero', precioId:'puente_acero', metric:'area'},
+    puente_mixto: {label:'Puente mixto', precioId:'puente_mixto', metric:'area'},
+  };
+  
+  let rowsHtml = '';
+  let totalDrenaje = 0;
+  
+  state.drenajeTrans.forEach((d, i) => {
+    const tipo = TIPOS_DRN[d.tipo];
+    if(!tipo) return;
+    
+    const precio = userPrices[tipo.precioId] || 0;
+    const isTubo = d.tipo.startsWith('tubo_');
+    const isVolumen = tipo.metric === 'volumen';
+    const isPuente = d.tipo.startsWith('puente_');
+    const modoFijo = d.modoPrecio === 'fijo';
+    
+    // Etiqueta de unidad de medida según tipo
+    const unidadMedida = tipo.metric === 'lineal' ? 'm' : tipo.metric === 'volumen' ? 'm³' : 'm²';
+    const labelPorUnidad = `Por ${unidadMedida}`;
+    
+    let cantidad = 0, formula = '', metricLabel = '', subtotal = 0;
+    
+    if(modoFijo){
+      // Precio total fijo (lump sum)
+      subtotal = (d.precioFijo || 0) * (d.cantidad || 1);
+      cantidad = d.cantidad || 1;
+      formula = `${d.cantidad} unidad(es) × precio total fijo`;
+      metricLabel = 'precio global';
+    } else if(tipo.metric === 'lineal'){
+      cantidad = (d.longitud || 0) * (d.cantidad || 0);
+      formula = `${d.cantidad} × ${fmt(d.longitud,1)}m = ${fmt(cantidad,1)} m`;
+      metricLabel = 'metros lineales';
+      subtotal = cantidad * precio;
+    } else if(tipo.metric === 'volumen'){
+      cantidad = (d.longitud || 0) * (d.ancho || 0) * (d.alto || 0) * (d.cantidad || 0);
+      formula = `${d.cantidad} × ${fmt(d.longitud,1)} × ${fmt(d.ancho,1)} × ${fmt(d.alto,1)} = ${fmt(cantidad,1)} m³`;
+      metricLabel = 'metros cúbicos';
+      subtotal = cantidad * precio;
+    } else if(tipo.metric === 'area'){
+      cantidad = (d.longitud || 0) * (d.ancho || 0) * (d.cantidad || 0);
+      formula = `${d.cantidad} × ${fmt(d.longitud,1)} × ${fmt(d.ancho,1)} = ${fmt(cantidad,1)} m²`;
+      metricLabel = 'metros cuadrados';
+      subtotal = cantidad * precio;
+    }
+    
+    totalDrenaje += subtotal;
+    
+    // Construir HTML del card - layout simple sin grids rígidos
+    let camposDim = '';
+    
+    if(isTubo){
+      camposDim = `
+        <div class="drn-field">
+          <label>DIÁMETRO (m)</label>
+          <input type="number" step="0.01" value="${fmt(d.diametro || tipo.diametroDef,2)}" data-i="${i}" data-k="diametro" class="drn-input drn-readonly" readonly title="Diámetro fijo según tipo">
+        </div>
+        <div class="drn-field">
+          <label>LONGITUD (m)</label>
+          <input type="number" step="0.1" value="${fmt(d.longitud,2)}" data-i="${i}" data-k="longitud" class="drn-input">
+        </div>
+      `;
+    } else if(isVolumen){
+      camposDim = `
+        <div class="drn-field">
+          <label>LONGITUD (m)</label>
+          <input type="number" step="0.1" value="${fmt(d.longitud,2)}" data-i="${i}" data-k="longitud" class="drn-input">
+        </div>
+        <div class="drn-field">
+          <label>ANCHO (m)</label>
+          <input type="number" step="0.1" value="${fmt(d.ancho,2)}" data-i="${i}" data-k="ancho" class="drn-input">
+        </div>
+        <div class="drn-field">
+          <label>ALTO (m)</label>
+          <input type="number" step="0.1" value="${fmt(d.alto,2)}" data-i="${i}" data-k="alto" class="drn-input">
+        </div>
+      `;
+    } else if(isPuente){
+      camposDim = `
+        <div class="drn-field">
+          <label>LUZ (m)</label>
+          <input type="number" step="0.5" value="${fmt(d.longitud,1)}" data-i="${i}" data-k="longitud" class="drn-input">
+        </div>
+        <div class="drn-field">
+          <label>ANCHO CALZADA (m)</label>
+          <input type="number" step="0.1" value="${fmt(d.ancho,2)}" data-i="${i}" data-k="ancho" class="drn-input">
+        </div>
+      `;
+    }
+    
+    // Bloque precio - toggle disponible para TODOS los tipos
+    let bloquePrecio = `
+      <div class="drn-calc">
+        <div class="drn-mode-row">
+          <label class="drn-mode-radio">
+            <input type="radio" name="modo-${i}" value="unitario" ${!modoFijo?'checked':''} data-i="${i}" class="drn-modo">
+            <span>${labelPorUnidad}</span>
+          </label>
+          <label class="drn-mode-radio">
+            <input type="radio" name="modo-${i}" value="fijo" ${modoFijo?'checked':''} data-i="${i}" class="drn-modo">
+            <span>Precio total fijo (lump sum)</span>
+          </label>
+        </div>
+        ${modoFijo ? `
+          <div class="drn-price-row">
+            <span class="drn-price-lab">Precio total por unidad</span>
+            <input type="number" step="100" value="${d.precioFijo || 0}" data-i="${i}" data-k="precioFijo" class="drn-input drn-input-price">
+            <span class="drn-price-unit">B/. / unidad</span>
+          </div>
+          <div class="drn-formula">
+            ${d.cantidad} unidad(es) × ${fmtMoneyFull(d.precioFijo || 0)} = <b>${fmtMoneyFull(subtotal)}</b>
+          </div>
+          <div class="drn-formula-note">⚠ Modo precio fijo: NO se calcula por ${unidadMedida}. Las dimensiones quedan como referencia documental.</div>
+        ` : `
+          <div class="drn-price-row">
+            <span class="drn-price-lab">Precio unitario</span>
+            <input type="number" step="0.01" value="${precio}" data-pid="${tipo.precioId}" class="drn-input drn-input-price drn-price">
+            <span class="drn-price-unit">B/. / ${unidadMedida}</span>
+          </div>
+          <div class="drn-formula">${formula} ${metricLabel}</div>
+          <div class="drn-formula">${fmt(cantidad,1)} × ${fmtMoneyFull(precio)} = <b>${fmtMoneyFull(subtotal)}</b></div>
+        `}
+      </div>
+    `;
+    
+    rowsHtml += `
+      <div class="drn-card">
+        <div class="drn-card-head">
+          <span class="drn-card-title">Estructura #${i+1}</span>
+          <button class="del" onclick="delDrenaje(${i})">Eliminar</button>
+        </div>
+        
+        <div class="drn-row">
+          <div class="drn-field drn-flex-1">
+            <label>TIPO</label>
+            <select data-i="${i}" data-k="tipo" class="drn-input">
+              <optgroup label="Tubos de concreto">
+                <option value="tubo_24" ${d.tipo==='tubo_24'?'selected':''}>Tubo Ø24" (0.61m)</option>
+                <option value="tubo_36" ${d.tipo==='tubo_36'?'selected':''}>Tubo Ø36" (0.91m)</option>
+                <option value="tubo_48" ${d.tipo==='tubo_48'?'selected':''}>Tubo Ø48" (1.22m)</option>
+                <option value="tubo_60" ${d.tipo==='tubo_60'?'selected':''}>Tubo Ø60" (1.52m)</option>
+              </optgroup>
+              <optgroup label="Cajones / Box culvert">
+                <option value="cajon" ${d.tipo==='cajon'?'selected':''}>Cajón concreto reforzado</option>
+                <option value="box" ${d.tipo==='box'?'selected':''}>Box culvert prefabricado</option>
+              </optgroup>
+              <optgroup label="Puentes vehiculares">
+                <option value="puente_concr" ${d.tipo==='puente_concr'?'selected':''}>Puente concreto</option>
+                <option value="puente_acero" ${d.tipo==='puente_acero'?'selected':''}>Puente acero estructural</option>
+                <option value="puente_mixto" ${d.tipo==='puente_mixto'?'selected':''}>Puente mixto acero-concreto</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="drn-field drn-w-cant">
+            <label>CANTIDAD</label>
+            <input type="number" min="1" value="${d.cantidad}" data-i="${i}" data-k="cantidad" class="drn-input">
+          </div>
+        </div>
+        
+        <div class="drn-row">${camposDim}</div>
+        
+        ${bloquePrecio}
+      </div>
+    `;
+  });
+  
+  document.getElementById('tab-drenaje').innerHTML = `
+    <div class="refs-block">
+      <h4>● Estructuras de drenaje transversal</h4>
+      <p>Define las obras transversales del proyecto. <b>Los campos de dimensión cambian según el tipo:</b></p>
+      <ul style="font-size:11px;padding-left:18px;color:var(--ink-2);line-height:1.6;margin-top:6px">
+        <li><b>Tubos Ø24"/36"/48"/60":</b> precio por <b>metro lineal</b> · solo longitud editable</li>
+        <li><b>Cajón / Box culvert:</b> precio por <b>m³ de concreto</b> · longitud × ancho × alto</li>
+        <li><b>Puente concreto/acero/mixto:</b> elige modo <b>"Por m²"</b> (calcula por área) o <b>"Precio total fijo"</b> (lump sum según cotización)</li>
+      </ul>
+    </div>
+
+    <style>
+      .drn-card{background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:12px;margin-bottom:10px;width:100%;max-width:100%;box-sizing:border-box}
+      .drn-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
+      .drn-card-title{font-weight:700;color:var(--primary);font-size:13px}
+      .drn-row{display:flex;gap:8px;margin-bottom:9px;flex-wrap:wrap}
+      .drn-field{flex:1;min-width:0}
+      .drn-field.drn-flex-1{flex:2}
+      .drn-field.drn-w-cant{flex:0 0 90px}
+      .drn-field label{display:block;font-size:9px;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.1em;font-family:'IBM Plex Mono';font-weight:700;margin-bottom:3px}
+      .drn-input{width:100%;background:var(--paper);border:1px solid var(--rule);padding:6px 8px;font-family:'IBM Plex Mono';font-size:11px;border-radius:3px;text-align:right;box-sizing:border-box}
+      select.drn-input{text-align:left}
+      .drn-input:focus{outline:none;border-color:var(--accent);background:var(--info-bg)}
+      .drn-readonly{background:var(--shade) !important;color:var(--ink-3)}
+      .drn-calc{background:var(--info-bg);border-left:3px solid var(--accent);padding:9px 11px;border-radius:0 4px 4px 0;font-size:11px;font-family:'IBM Plex Mono'}
+      .drn-mode-row{display:flex;gap:14px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px dashed var(--rule)}
+      .drn-mode-radio{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--ink-2);font-family:'IBM Plex Mono';font-weight:600}
+      .drn-mode-radio input{accent-color:var(--primary);cursor:pointer;margin:0}
+      .drn-price-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:5px}
+      .drn-price-lab{color:var(--ink-3);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700}
+      .drn-input-price{width:110px;font-weight:700;font-size:12px;flex:0 0 auto}
+      .drn-price-unit{color:var(--ink-3);font-size:10px;font-family:'IBM Plex Mono'}
+      .drn-formula{color:var(--ink-2);font-size:11px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--rule)}
+      .drn-formula:not(:nth-of-type(1)){border-top:none;padding-top:0}
+      .drn-formula b{color:var(--primary);font-size:13px}
+      .drn-formula-note{margin-top:6px;padding:5px 8px;background:#FFFBEB;border-left:3px solid var(--warn);font-size:10px;color:var(--warn);font-family:Verdana;font-style:italic}
+    </style>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Configuración automática</h2>
+        <span class="tag">Auto-generar estructuras</span>
+      </div>
+      <div class="panel-body">
+        <div class="edit-row" style="margin-bottom:10px">
+          <div class="lab">Separación entre alcantarillas<small>Para auto-generar (no aplica a puentes)</small></div>
+          <input type="number" step="50" value="${state.alcantSep}" id="in-alcsep">
+          <button class="help" onclick="showHelp('alcantSep')">?</button>
+        </div>
+        <button class="btn-add" onclick="regenDrenaje()">↻ Regenerar como Tubos Ø36" según separación</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Estructuras del proyecto <small>(${state.drenajeTrans.length})</small></h2>
+        <span class="tag">Subtotal drenaje: ${fmtMoneyFull(totalDrenaje)}</span>
+      </div>
+      <div class="panel-body">
+        ${rowsHtml || '<div class="empty">Sin estructuras. Usa "Auto-generar" o "Agregar".</div>'}
+        <button class="btn-add" onclick="addDrenaje()">+ Agregar estructura manualmente</button>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('in-alcsep').addEventListener('input', e => state.alcantSep = +e.target.value);
+  
+  // Toggle modo precio puente
+  document.querySelectorAll('.drn-modo').forEach(rad => {
+    rad.addEventListener('change', e => {
+      const i = +e.target.dataset.i;
+      state.drenajeTrans[i].modoPrecio = e.target.value;
+      if(e.target.value === 'fijo' && !state.drenajeTrans[i].precioFijo){
+        // Inicializar con valor por unidad × cantidad estimada (según métrica)
+        const d = state.drenajeTrans[i];
+        const tipo = TIPOS_DRN[d.tipo];
+        const pUnit = userPrices[tipo.precioId] || 0;
+        let cant = 0;
+        if(tipo.metric === 'lineal') cant = (d.longitud || 0);
+        else if(tipo.metric === 'volumen') cant = (d.longitud||0) * (d.ancho||0) * (d.alto||0);
+        else if(tipo.metric === 'area') cant = (d.longitud||0) * (d.ancho||0);
+        state.drenajeTrans[i].precioFijo = Math.round(pUnit * cant);
+      }
+      renderDrenaje();
+      renderOthers('drenaje');
+    });
+  });
+  
+  // Binding precios manuales por m² (drn-price)
+  document.querySelectorAll('.drn-price').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const pid = e.target.dataset.pid;
+      userPrices[pid] = e.target.value === '' ? null : +e.target.value;
+      renderOthers('drenaje');
+    });
+  });
+  
+  // Binding inputs dimensiones
+  document.querySelectorAll('.drn-input:not(.drn-price):not(.drn-modo)').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.i;
+      const k = e.target.dataset.k;
+      if(i === undefined || !k) return;
+      const v = e.target.type === 'number' ? +e.target.value : e.target.value;
+      
+      if(k === 'tipo'){
+        state.drenajeTrans[i].tipo = v;
+        const newTipo = TIPOS_DRN[v];
+        // Preservar modoPrecio si ya estaba en fijo - solo ajustar campos de dimensión
+        if(v.startsWith('tubo_')){
+          state.drenajeTrans[i].diametro = newTipo.diametroDef;
+          state.drenajeTrans[i].longitud = state.drenajeTrans[i].longitud || (state.w*state.car + 2*state.berma + 2);
+        } else if(v === 'cajon' || v === 'box'){
+          state.drenajeTrans[i].longitud = state.drenajeTrans[i].longitud || (state.w*state.car + 2*state.berma + 2);
+          state.drenajeTrans[i].ancho = state.drenajeTrans[i].ancho || 2.0;
+          state.drenajeTrans[i].alto = state.drenajeTrans[i].alto || 2.0;
+        } else if(v.startsWith('puente_')){
+          state.drenajeTrans[i].longitud = state.drenajeTrans[i].longitud || 15;
+          state.drenajeTrans[i].ancho = state.drenajeTrans[i].ancho || (state.w*state.car + 2*state.berma);
+        }
+        renderDrenaje();
+        renderOthers('drenaje');
+        return;
+      }
+      
+      state.drenajeTrans[i][k] = v;
+      renderOthers('drenaje');
+    });
+  });
+}
+
+window.regenDrenaje = function(){
+  initDrenaje();
+  toast('Estructuras regeneradas');
+  renderAll();
+};
+window.addDrenaje = function(){
+  state.drenajeTrans.push({
+    tipo:'tubo_36', cantidad:1,
+    longitud: state.w*state.car + 2*state.berma + 2,
+    diametro: 0.91,
+    ancho: 2.0, alto: 2.0
+  });
+  renderAll();
+};
+window.delDrenaje = function(i){
+  state.drenajeTrans.splice(i,1);
+  renderAll();
+};
+
+function renderPrecios(){
+  // Si ya está renderizado, solo refrescar valores sin reconstruir DOM
+  const container = document.getElementById('tab-precios');
+  const exists = container.querySelector('.price');
+  
+  if(exists){
+    // Solo actualizar valores que no estén siendo editados
+    const activeId = document.activeElement ? document.activeElement.id : null;
+    container.querySelectorAll('.price').forEach(inp => {
+      if(inp !== document.activeElement){
+        const pid = inp.dataset.pid;
+        const v = userPrices[pid];
+        if(v !== null && +inp.value !== v) inp.value = v;
+      }
+    });
+    container.querySelectorAll('.source').forEach(inp => {
+      if(inp !== document.activeElement){
+        const pid = inp.dataset.pid;
+        if(inp.value !== (userSources[pid]||'')) inp.value = userSources[pid] || '';
+      }
+    });
+    return;
+  }
+  
+  const groups = {};
+  PARTIDAS.forEach(p => { if(!groups[p.cap]) groups[p.cap] = []; groups[p.cap].push(p); });
+  const capNames = {preliminares:'Preliminares', tierras:'Tierras', pavimento:'Pavimento', drenaje:'Drenaje', senalizacion:'Señalización', seguridad:'Seguridad', admin:'Indirectos'};
+  
+  let html = `<div class="refs-block">
+    <h4>● Precios unitarios</h4>
+    <p>Los precios están <b>precargados con valores referenciales de Contraloría Panamá V10.4 (2023)</b> y mercado 2024-2025. 
+    <b>Edita cada uno</b> según tus APUs o cotizaciones. Documenta la <b>fuente</b> de cada precio para auditoría.</p>
+    <p>El botón <b>Usar ref.</b> restaura el valor referencial.</p>
+  </div>`;
+  
+  Object.entries(groups).forEach(([cap, parts]) => {
+    html += `<div class="panel" style="margin-bottom:14px"><div class="panel-head"><h2>${capNames[cap]} <small>(${parts.length} partidas)</small></h2><span class="tag">${cap}</span></div><div class="panel-body">`;
+    parts.forEach(p => {
+      const isPercent = p.unidad === '%';
+      const symbol = isPercent ? '%' : 'B/.';
+      html += `
+        <div class="price-row">
+          <div class="desc">${p.nombre}<small>${p.unidad}${isPercent?'':' · '+symbol+'/'+p.unidad}</small></div>
+          <input type="number" step="${isPercent?'0.5':'0.01'}" class="price" value="${userPrices[p.id] ?? ''}" data-pid="${p.id}" placeholder="0">
+          <input type="text" class="source" value="${userSources[p.id] || ''}" data-pid="${p.id}" placeholder="Fuente / justificativo">
+          <button class="use" onclick="useRef('${p.id}')">Usar ref.</button>
+        </div>
+      `;
+    });
+    html += '</div></div>';
+  });
+  
+  container.innerHTML = html;
+  
+  container.querySelectorAll('.price').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const pid = e.target.dataset.pid;
+      userPrices[pid] = e.target.value === '' ? null : +e.target.value;
+      // Solo recalcular otros tabs, NO repintar este
+      renderOthers('precios');
+    });
+  });
+  container.querySelectorAll('.source').forEach(inp => {
+    inp.addEventListener('input', e => {
+      userSources[e.target.dataset.pid] = e.target.value;
+      renderOthers('precios');
+    });
+  });
+}
+
+window.useRef = function(pid){
+  const p = PARTIDAS.find(x => x.id === pid);
+  if(!p) return;
+  userPrices[pid] = p.ref;
+  userSources[pid] = p.fuente;
+  renderAll();
+  toast('Precio referencial aplicado');
+};
+
+function renderResultados(){
+  const r = calcCosts();
+  if(r.items.length === 0){
+    document.getElementById('tab-resultados').innerHTML = '<div class="empty">Configura cantidades y precios para ver resultados</div>';
+    return;
+  }
+  
+  const capOrder = ['preliminares','tierras','pavimento','drenaje','senalizacion','seguridad','admin'];
+  const capNames = {preliminares:'Preliminares', tierras:'Mov. Tierras', pavimento:'Pavimento', drenaje:'Drenaje', senalizacion:'Señalización', seguridad:'Seguridad', admin:'Indirectos'};
+  const sorted = [...r.items].sort((a,b) => capOrder.indexOf(a.capitulo) - capOrder.indexOf(b.capitulo));
+  
+  let tHtml = `<table class="audit"><thead><tr><th>#</th><th>Partida</th><th>Unidad</th><th class="right">Cantidad</th><th class="right">P. Unit.</th><th class="right">Subtotal</th><th>Fuente</th></tr></thead><tbody>`;
+  let i = 1, capSub = 0, lastCap = '';
+  
+  sorted.forEach(it => {
+    if(it.capitulo !== lastCap){
+      if(capSub > 0){
+        tHtml += `<tr class="subtotal"><td colspan="5">Subtotal ${capNames[lastCap]}</td><td class="right">${fmtMoneyFull(capSub)}</td><td></td></tr>`;
+      }
+      lastCap = it.capitulo;
+      capSub = 0;
+    }
+    capSub += it.total || 0;
+    tHtml += `<tr ${it.missing?'style="background:#FFFBEB"':''}>
+      <td>${i++}</td><td>${it.nombre}</td><td>${it.unidad}</td>
+      <td class="right num">${fmt(it.cantidad, it.cantidad<10?2:0)}</td>
+      <td class="right num">${it.precio!==null?fmtMoneyFull(it.precio):'⚠ falta'}</td>
+      <td class="right num">${fmtMoneyFull(it.total || 0)}</td>
+      <td class="src">${it.fuente || ''}</td>
+    </tr>`;
+  });
+  if(capSub > 0){
+    tHtml += `<tr class="subtotal"><td colspan="5">Subtotal ${capNames[lastCap]}</td><td class="right">${fmtMoneyFull(capSub)}</td><td></td></tr>`;
+  }
+  tHtml += `<tr class="total"><td colspan="5">TOTAL PROYECTO</td><td class="right">${fmtMoneyFull(r.total)}</td><td></td></tr>
+    <tr class="total" style="background:var(--accent)"><td colspan="5">Por km (${state.L} km)</td><td class="right">${fmtMoneyFull(r.totalPorKm)}/km</td><td></td></tr></tbody>`;
+  
+  document.getElementById('tab-resultados').innerHTML = `
+    <div class="panel">
+      <div class="panel-head"><h2>Desglose detallado <small>— cantidad × precio = subtotal</small></h2><span class="tag">Auditable</span></div>
+      <div class="panel-body" style="padding:0;overflow-x:auto">${tHtml}</div>
+    </div>
+  `;
+}
+
+function renderMantenimiento(){
+  const r = calcCosts();
+  const m = calcMantenimiento(r.total);
+  
+  // Tabla eventos editables
+  let evtHtml = '';
+  state.mantEventos.forEach((ev, i) => {
+    evtHtml += `
+      <div class="maint-event">
+        <div class="lab">
+          <input type="text" value="${ev.desc}" data-i="${i}" data-k="desc" class="evt-input" style="text-align:left;width:100%;border:1px solid var(--rule);padding:4px 6px;font-family:'IBM Plex Mono';font-size:11px;border-radius:3px">
+          <small>${ev.periodo > 0 ? `Cada ${ev.periodo} año(s) · año ${ev.anoInicio}-${ev.anoFin}` : `Año ${ev.anoInicio}`} · ${ev.pctCosto}% del costo inicial</small>
+        </div>
+        <input type="number" min="1" value="${ev.anoInicio}" data-i="${i}" data-k="anoInicio" class="evt-input" title="Año inicio">
+        <input type="number" min="0" max="50" value="${ev.anoFin}" data-i="${i}" data-k="anoFin" class="evt-input" title="Año fin (si recurrente)">
+        <input type="number" step="0.5" value="${ev.pctCosto}" data-i="${i}" data-k="pctCosto" class="evt-input" title="% del costo inicial">
+        <button class="del" onclick="toggleMantEvento(${i})" style="background:${ev.activo?'var(--good)':'var(--ink-3)'};color:#fff;border:none;padding:4px 8px;border-radius:3px;font-family:'IBM Plex Mono';font-size:10px;cursor:pointer">${ev.activo?'✓':'×'}</button>
+      </div>
+    `;
+  });
+  
+  // Tabla flujos
+  let flujoHtml = `<table class="audit"><thead><tr><th>Año</th><th class="right">Costo nominal</th><th class="right">Factor descuento</th><th class="right">Valor presente</th><th>Eventos</th></tr></thead><tbody>`;
+  for(let a = 0; a <= state.mantHorizonte; a++){
+    if(m.flujos[a] > 0){
+      const fd = a === 0 ? 1 : 1/Math.pow(1+state.mantTasa/100, a);
+      const vp = m.flujos[a] * fd;
+      // qué eventos ocurren en este año
+      const evts = state.mantEventos.filter(e => {
+        if(!e.activo) return false;
+        if(e.periodo > 0){
+          for(let y=e.anoInicio;y<=e.anoFin;y+=e.periodo) if(y===a) return true;
+          return false;
+        }
+        return e.anoInicio === a;
+      }).map(e => e.desc).join(' + ');
+      flujoHtml += `<tr><td class="num">${a}</td><td class="right num">${fmtMoneyFull(m.flujos[a])}</td><td class="right">${fmt(fd,3)}</td><td class="right num">${fmtMoneyFull(vp)}</td><td class="src">${a===0?'Inversión inicial':evts}</td></tr>`;
+    }
+  }
+  flujoHtml += `<tr class="total"><td colspan="3">VPN Total Ciclo Vida</td><td class="right">${fmtMoneyFull(m.costo_ciclo_total)}</td><td></td></tr></tbody>`;
+  
+  document.getElementById('tab-mantenimiento').innerHTML = `
+    <div class="refs-block">
+      <h4>● Análisis de Costo de Ciclo de Vida (LCC)</h4>
+      <p>Estima el <b>costo total</b> del proyecto incluyendo construcción inicial + mantenimiento a lo largo del horizonte de análisis. 
+      Todos los parámetros son <b>editables</b>: horizonte, tasa de descuento, inflación, y cada evento de mantenimiento.</p>
+      <p>El cálculo aplica <b>Valor Presente Neto (VPN)</b> para llevar costos futuros a valor de hoy.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Parámetros generales</h2></div>
+      <div class="panel-body">
+        <div class="editable-grid">
+          <div class="edit-row">
+            <div class="lab">Horizonte de análisis<small>Años a evaluar</small></div>
+            <input type="number" min="5" max="50" value="${state.mantHorizonte}" id="m-horiz">
+            <button class="help" onclick="showHelp('mantRutinario')">?</button>
+          </div>
+          <div class="edit-row">
+            <div class="lab">Tasa de descuento<small>% anual para VPN</small></div>
+            <input type="number" step="0.5" value="${state.mantTasa}" id="m-tasa">
+            <button class="help" onclick="showHelp('tasaDescuento')">?</button>
+          </div>
+          <div class="edit-row">
+            <div class="lab">Inflación esperada<small>% anual para escalación</small></div>
+            <input type="number" step="0.5" value="${state.mantInflacion}" id="m-infl">
+            <button class="help" onclick="showHelp('tasaDescuento')">?</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Eventos de mantenimiento <small>— ${state.mantEventos.filter(e=>e.activo).length}/${state.mantEventos.length} activos</small></h2></div>
+      <div class="panel-body">
+        <div style="display:grid;grid-template-columns:1fr 90px 110px 110px 30px;gap:6px;padding:6px 10px;font-family:'IBM Plex Mono';font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-3);font-weight:700">
+          <div>Descripción</div><div style="text-align:right">Año inicio</div><div style="text-align:right">Año fin (recurr.)</div><div style="text-align:right">% costo inicial</div><div>On/Off</div>
+        </div>
+        ${evtHtml}
+        <button class="btn-add" onclick="addMantEvento()">+ Agregar evento</button>
+        <div style="margin-top:12px;padding:10px;background:var(--info-bg);border-radius:4px;font-size:11px;color:var(--ink-2);line-height:1.5">
+          <b>Notas:</b> Si "Año fin" es igual o menor a "Año inicio", el evento ocurre <b>una sola vez</b> en "Año inicio". 
+          Para eventos <b>recurrentes</b>, define ambos años y editaré el periodo automáticamente. 
+          Eventos típicos: rutinario anual (1.5%/año), sello cada 6 años (5%), refuerzo año 15 (30%), reconstrucción año 25 (70%).
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Flujo de costos en el tiempo</h2><span class="tag">VPN con tasa ${state.mantTasa}%</span></div>
+      <div class="panel-body" style="padding:0;overflow-x:auto">${flujoHtml}</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Resumen LCC</h2><span class="tag">Por km</span></div>
+      <div class="panel-body">
+        <table class="audit">
+          <tr><td>Costo inicial</td><td class="right num">${fmtMoneyFull(r.total)}</td><td class="src">${fmtMoneyFull(r.totalPorKm)}/km</td></tr>
+          <tr><td>Mantenimiento nominal acumulado</td><td class="right num">${fmtMoneyFull(m.total_mant_nominal)}</td><td class="src">Sin descontar</td></tr>
+          <tr><td>VPN mantenimiento</td><td class="right num">${fmtMoneyFull(m.vpn_mant)}</td><td class="src">Tasa ${state.mantTasa}%</td></tr>
+          <tr><td>Anualidad equivalente</td><td class="right num">${fmtMoneyFull(m.anualidad)}/año</td><td class="src">${fmtMoneyFull(m.porKm_anual_mant)}/km/año</td></tr>
+          <tr class="total"><td>Costo Total Ciclo Vida (VPN)</td><td class="right">${fmtMoneyFull(m.costo_ciclo_total)}</td><td class="src" style="color:#fff">${fmtMoneyFull(m.porKm_total)}/km</td></tr>
+        </table>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('m-horiz').addEventListener('input', e => { state.mantHorizonte = +e.target.value; renderOthers('mantenimiento'); });
+  document.getElementById('m-tasa').addEventListener('input', e => { state.mantTasa = +e.target.value; renderOthers('mantenimiento'); });
+  document.getElementById('m-infl').addEventListener('input', e => { state.mantInflacion = +e.target.value; renderOthers('mantenimiento'); });
+  document.querySelectorAll('.evt-input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.i;
+      const k = e.target.dataset.k;
+      const v = e.target.type === 'number' ? +e.target.value : e.target.value;
+      state.mantEventos[i][k] = v;
+      // ajustar periodo: si anoFin > anoInicio, se asume periodo de 1
+      if(k === 'anoFin' || k === 'anoInicio'){
+        const ev = state.mantEventos[i];
+        ev.periodo = ev.anoFin > ev.anoInicio ? 1 : 0;
+      }
+      renderOthers('mantenimiento');
+    });
+  });
+}
+
+window.toggleMantEvento = function(i){
+  state.mantEventos[i].activo = !state.mantEventos[i].activo;
+  renderAll();
+};
+window.addMantEvento = function(){
+  state.mantEventos.push({
+    id:'evt'+Date.now(), desc:'Nuevo evento',
+    anoInicio:1, anoFin:1, periodo:0, pctCosto:5, activo:true
+  });
+  renderAll();
+};
+
+function renderBenchmark(){
+  const r = calcCosts();
+  const yourPerKm = r.totalPorKm;
+  
+  // Calcular promedios por categoría
+  const cats = ['construccion', 'rehab', 'mantenimiento'];
+  const catLabels = {construccion:'Construcción Nueva', rehab:'Rehabilitación', mantenimiento:'Mantenimiento'};
+  const catColors = {construccion:'var(--bad)', rehab:'var(--accent)', mantenimiento:'var(--good)'};
+  
+  const stats = {};
+  cats.forEach(c => {
+    const items = BENCHMARKS.filter(b => b.categoria === c);
+    if(items.length === 0) return;
+    const vals = items.map(b => b.perkm);
+    const kms = items.map(b => b.km);
+    stats[c] = {
+      n: items.length,
+      promedio: vals.reduce((a,b)=>a+b,0) / vals.length,
+      min: Math.min(...vals),
+      max: Math.max(...vals),
+      kmTotal: kms.reduce((a,b)=>a+b, 0),
+      items
+    };
+  });
+  
+  // KPI cards por categoría
+  let kpiHtml = '<div class="kpis" style="margin-bottom:18px">';
+  cats.forEach(c => {
+    if(!stats[c]) return;
+    kpiHtml += `
+      <div class="kpi" style="border-top-color:${catColors[c]}">
+        <div class="l">${catLabels[c]}</div>
+        <div class="n">${fmtMoney(stats[c].promedio)}<span class="unit">/km</span></div>
+        <div class="sub">${stats[c].n} proyectos · ${fmt(stats[c].kmTotal,0)} km totales</div>
+      </div>
+    `;
+  });
+  
+  // KPI tu proyecto
+  if(yourPerKm > 0){
+    const tipoUsuario = state.tipo === 'nueva' ? 'construccion' : state.tipo === 'rehab' ? 'rehab' : 'rehab';
+    const comp = stats[tipoUsuario];
+    let deltaTxt = '';
+    if(comp){
+      const dpct = (yourPerKm / comp.promedio - 1) * 100;
+      const sign = dpct >= 0 ? '+' : '';
+      const dcolor = Math.abs(dpct) < 25 ? 'var(--good)' : Math.abs(dpct) < 50 ? 'var(--warn)' : 'var(--bad)';
+      deltaTxt = `<div class="sub" style="color:${dcolor};font-weight:700">${sign}${fmt(dpct,0)}% vs promedio ${catLabels[tipoUsuario]}</div>`;
+    }
+    kpiHtml += `
+      <div class="kpi b" style="background:var(--info-bg)">
+        <div class="l">► Tu proyecto</div>
+        <div class="n" style="color:var(--primary)">${fmtMoney(yourPerKm)}<span class="unit">/km</span></div>
+        ${deltaTxt}
+      </div>
+    `;
+  }
+  kpiHtml += '</div>';
+  
+  // Tablas por categoría
+  let tablesHtml = '';
+  cats.forEach(c => {
+    if(!stats[c]) return;
+    
+    let tbHtml = `<table class="bench-table">
+      <thead><tr><th>Proyecto</th><th>Provincia</th><th>Año</th><th class="right">Km</th><th class="right">Total</th><th class="right">$/km</th></tr></thead>
+      <tbody>`;
+    
+    stats[c].items.sort((a,b) => b.perkm - a.perkm).forEach(b => {
+      tbHtml += `<tr>
+        <td>${b.nombre}<br><small style="color:var(--ink-3);font-style:italic;font-family:Verdana;font-weight:400">${b.tipo} · ${b.ref}</small></td>
+        <td>${b.prov}</td>
+        <td>${b.ano}</td>
+        <td class="right">${fmt(b.km,1)}</td>
+        <td class="right">${fmtMoneyFull(b.total)}</td>
+        <td class="right">${fmtMoneyFull(b.perkm)}</td>
+      </tr>`;
+    });
+    
+    tbHtml += `<tr style="background:var(--shade);font-weight:700">
+      <td colspan="3"><b>PROMEDIO ${catLabels[c].toUpperCase()}</b></td>
+      <td class="right">${fmt(stats[c].kmTotal,0)} km</td>
+      <td class="right">—</td>
+      <td class="right" style="color:${catColors[c]}">${fmtMoneyFull(stats[c].promedio)}</td>
+    </tr></tbody></table>`;
+    
+    tablesHtml += `
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-head" style="background:linear-gradient(90deg,var(--shade),var(--paper));border-left:4px solid ${catColors[c]}">
+          <h2>${catLabels[c]} <small>${stats[c].n} proyectos</small></h2>
+          <span class="tag">Promedio ${fmtMoneyFull(stats[c].promedio)}/km · Rango ${fmtMoneyFull(stats[c].min)}-${fmtMoneyFull(stats[c].max)}/km</span>
+        </div>
+        <div class="panel-body" style="padding:0;overflow-x:auto">${tbHtml}</div>
+      </div>
+    `;
+  });
+  
+  // Análisis razonabilidad
+  let analysisHtml = '';
+  if(yourPerKm > 0){
+    const tipoUsuario = state.tipo === 'nueva' ? 'construccion' : 'rehab';
+    const comp = stats[tipoUsuario];
+    if(comp){
+      let estado, color, txt;
+      const ratio = yourPerKm / comp.promedio;
+      if(ratio < 0.5){ estado='MUY BAJO'; color='var(--warn)'; txt=`Tu estimación es ${fmt((1-ratio)*100,0)}% menor que el promedio histórico de ${catLabels[tipoUsuario].toLowerCase()} (${fmtMoneyFull(comp.promedio)}/km). Verifica partidas faltantes o precios subestimados.`; }
+      else if(ratio < 0.75){ estado='BAJO'; color='var(--warn)'; txt=`Tu estimación está por debajo del promedio. Justificable si: terreno favorable, intervención simple, materiales locales económicos.`; }
+      else if(ratio <= 1.25){ estado='EN RANGO'; color='var(--good)'; txt=`Tu estimación (${fmtMoneyFull(yourPerKm)}/km) está alineada con el promedio histórico panameño (${fmtMoneyFull(comp.promedio)}/km, ±25%).`; }
+      else if(ratio <= 1.5){ estado='ALTO'; color='var(--warn)'; txt=`Estimación superior al promedio. Justificable si: terreno difícil, obras de arte importantes, sección amplia.`; }
+      else{ estado='MUY ALTO'; color='var(--bad)'; txt=`Estimación ${fmt((ratio-1)*100,0)}% sobre el promedio. Revisa duplicación de partidas o sobreestimación. Documenta condiciones especiales que justifiquen.`; }
+      
+      analysisHtml = `
+        <div class="panel">
+          <div class="panel-head"><h2>Análisis de razonabilidad</h2></div>
+          <div class="panel-body">
+            <div style="background:var(--shade);padding:14px 18px;border-radius:6px;border-left:4px solid ${color};margin-bottom:14px">
+              <div style="font-family:'IBM Plex Mono';font-size:10px;text-transform:uppercase;letter-spacing:0.2em;color:var(--ink-3);margin-bottom:6px">Estado · vs ${catLabels[tipoUsuario]}</div>
+              <div style="font-size:22px;font-weight:800;color:${color};margin-bottom:6px;letter-spacing:-0.02em">${estado}</div>
+              <p style="font-size:13px;color:var(--ink-2)">${txt}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+  
+  // CTA LMM
+  const ctaHtml = `
+    <div style="background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:8px;padding:20px 24px;margin-top:18px;color:#fff">
+      <div style="font-family:'IBM Plex Mono';font-size:10px;text-transform:uppercase;letter-spacing:0.2em;opacity:0.85;margin-bottom:6px">¿Necesitas avanzar del EOM a un diseño definitivo?</div>
+      <h3 style="font-size:18px;font-weight:800;margin-bottom:8px;letter-spacing:-0.02em">LMM Ingeniería puede ayudarte</h3>
+      <p style="font-size:13px;line-height:1.5;margin-bottom:12px;opacity:0.95">
+      Si tu proyecto requiere <b>levantamiento topográfico</b>, <b>diseño geométrico definitivo</b>, <b>estudios hidrológicos</b>, 
+      <b>APUs específicos</b>, <b>supervisión de obra</b> o <b>asesoría especializada en infraestructura vial e hidráulica</b>, 
+      contáctanos. 15+ años de experiencia en proyectos MOP, IDAAN y privados en Panamá.
+      </p>
+      <a href="mailto:lmarquez@lmmingenieria.com?subject=Consulta%20diseño%20vial%20-%20EOM%20generada&body=Hola%20LMM%20Ingeniería,%0A%0AHe%20generado%20una%20EOM%20con%20su%20herramienta%20y%20me%20gustaría%20coordinar%20una%20reunión%20para%20avanzar%20a%20la%20siguiente%20fase%20del%20proyecto.%0A%0ADatos%20del%20proyecto:%0A-%20Tipo:%20${encodeURIComponent(state.tipo)}%0A-%20Longitud:%20${state.L}%20km%0A-%20Provincia:%20${encodeURIComponent(state.prjProv)}%0A%0AGracias." 
+         style="display:inline-block;background:#fff;color:var(--primary);padding:10px 18px;border-radius:5px;text-decoration:none;font-family:'IBM Plex Mono';font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em">
+        ✉ Contactar a LMM Ingeniería
+      </a>
+      <div style="margin-top:10px;font-family:'IBM Plex Mono';font-size:11px;opacity:0.85">
+        Email: <b>lmarquez@lmmingenieria.com</b>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('tab-benchmark').innerHTML = `
+    <div class="refs-block">
+      <h4>● Comparativa con ${BENCHMARKS.length} proyectos viales reales en Panamá</h4>
+      <p>Datos de adjudicaciones públicas MOP, PanamaCompra y publicaciones oficiales. <b>Categorizados por tipo de intervención</b> para comparación más precisa.</p>
+    </div>
+    
+    ${kpiHtml}
+    ${analysisHtml}
+    ${tablesHtml}
+    ${ctaHtml}
+  `;
+}
+
+function renderAuditoria(){
+  const r = calcCosts();
+  const itemsWithSource = r.items.filter(it => !it.missing && it.fuente && !it.fuente.startsWith('⚠'));
+  const sinFuente = r.items.filter(it => !it.missing && (!it.fuente || it.fuente.trim() === ''));
+  
+  let html = `<div class="refs-block">
+    <h4>● Registro auditable de fuentes</h4>
+    <p>Cada partida y su precio están documentados con la fuente que respalda el valor. Este registro se incluye en el reporte PDF y sirve como sustento técnico ante revisores, contralorías o auditores.</p>
+  </div>`;
+  
+  // Registro proyecto
+  html += `<div class="panel" style="margin-bottom:14px"><div class="panel-head"><h2>Información del proyecto</h2></div><div class="panel-body">
+    <table class="audit">
+      <tr><td>Nombre</td><td class="num">${state.prjNombre || '(sin nombre)'}</td></tr>
+      <tr><td>Provincia</td><td class="num">${state.prjProv}</td></tr>
+      <tr><td>Responsable técnico</td><td class="num">${state.prjResp || '(sin responsable)'}</td></tr>
+      <tr><td>Fecha estimación</td><td class="num">${state.prjFecha}</td></tr>
+      <tr><td>Tipo</td><td class="num">${state.tipo}</td></tr>
+      <tr><td>Longitud</td><td class="num">${state.L} km</td></tr>
+      <tr><td>Topografía</td><td class="num">P:${state.terPlano}% O:${state.terOndu}% M:${state.terMont}%</td></tr>
+    </table>
+  </div></div>`;
+  
+  let logHtml = '';
+  itemsWithSource.forEach((it, i) => {
+    logHtml += `<tr>
+      <td class="num">${i+1}</td>
+      <td>${it.nombre}</td>
+      <td class="right num">${fmt(it.cantidad, it.cantidad<10?2:0)} ${it.unidad}</td>
+      <td class="right num">${fmtMoneyFull(it.precio)}</td>
+      <td class="right num">${fmtMoneyFull(it.total)}</td>
+      <td class="src">${it.fuente}</td>
+    </tr>`;
+  });
+  
+  if(itemsWithSource.length > 0){
+    html += `<div class="panel"><div class="panel-head"><h2>Partidas con fuente documentada <small>(${itemsWithSource.length})</small></h2></div>
+      <div class="panel-body" style="padding:0;overflow-x:auto">
+        <table class="audit"><thead><tr><th>#</th><th>Partida</th><th class="right">Cantidad</th><th class="right">P.Unit</th><th class="right">Subtotal</th><th>Fuente</th></tr></thead><tbody>${logHtml}</tbody></table>
+      </div></div>`;
+  }
+  
+  if(sinFuente.length > 0){
+    let sfHtml = '';
+    sinFuente.forEach(it => {
+      sfHtml += `<tr><td>${it.nombre}</td><td class="right num">${fmtMoneyFull(it.precio)}/${it.unidad}</td></tr>`;
+    });
+    html += `<div class="panel" style="margin-top:14px"><div class="panel-head" style="background:#FFFBEB"><h2 style="color:var(--warn)">⚠ Sin fuente documentada <small>(${sinFuente.length})</small></h2></div>
+      <div class="panel-body" style="padding:0;overflow-x:auto">
+        <table class="audit"><thead><tr><th>Partida</th><th class="right">Precio</th></tr></thead><tbody>${sfHtml}</tbody></table>
+      </div></div>`;
+  }
+  
+  if(itemsWithSource.length === 0 && sinFuente.length === 0){
+    html += '<div class="empty">Configura cantidades y precios para ver el registro auditable</div>';
+  }
+  
+  document.getElementById('tab-auditoria').innerHTML = html;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   MASTER RENDER + TABS
+   ════════════════════════════════════════════════════════════════════════ */
+
+function renderAll(){
+  renderSidebar();
+  renderDatos();
+  renderCantidades();
+  renderDrenaje();
+  renderPrecios();
+  renderResultados();
+  renderMantenimiento();
+  renderBenchmark();
+  renderAuditoria();
+}
+
+// renderOthers: renderiza todo EXCEPTO el tab activo (preserva foco en inputs)
+function renderOthers(skipTab){
+  // Si skipTab es 'sidebar', no tocar sidebar (sliders/inputs en uso)
+  if(skipTab !== 'sidebar') renderSidebarSafe();
+  if(skipTab !== 'datos') renderDatos();
+  if(skipTab !== 'cantidades') renderCantidades(); else renderCantidadesRefresh();
+  if(skipTab !== 'drenaje') renderDrenaje(); else renderDrenajeRefresh();
+  if(skipTab !== 'precios') renderPrecios();
+  if(skipTab !== 'resultados') renderResultados();
+  if(skipTab !== 'mantenimiento') renderMantenimiento(); else renderMantenimientoRefresh();
+  if(skipTab !== 'benchmark') renderBenchmark();
+  if(skipTab !== 'auditoria') renderAuditoria();
+}
+
+function renderSidebarSafe(){
+  // No re-render si el foco está dentro del sidebar
+  if(document.activeElement && document.getElementById('sidebar').contains(document.activeElement)) return;
+  renderSidebar();
+}
+
+// Refresh selectivo para tabs con inputs editables (no re-render, solo actualizar valores derivados)
+function renderCantidadesRefresh(){
+  // actualizar la tabla de cantidades calculadas sin tocar inputs
+  const q = calcQuantities();
+  // simplemente forzamos render solo si no hay input enfocado
+  if(!document.activeElement || !document.getElementById('tab-cantidades').contains(document.activeElement)) renderCantidades();
+}
+function renderDrenajeRefresh(){
+  // actualizar solo subtotales visibles sin tocar inputs
+  if(!document.activeElement || !document.getElementById('tab-drenaje').contains(document.activeElement)){
+    renderDrenaje();
+    return;
+  }
+  // recalcular y actualizar solo los cálculos visibles
+  const TIPOS_DRN = {
+    tubo_24:{precioId:'tubo_concr_24', metric:'lineal'},
+    tubo_36:{precioId:'tubo_concr_36', metric:'lineal'},
+    tubo_48:{precioId:'tubo_concr_48', metric:'lineal'},
+    tubo_60:{precioId:'tubo_concr_60', metric:'lineal'},
+    cajon:{precioId:'cajon_concr', metric:'volumen'},
+    box:{precioId:'box_culvert', metric:'volumen'},
+    puente_concr:{precioId:'puente_concr', metric:'area'},
+    puente_acero:{precioId:'puente_acero', metric:'area'},
+    puente_mixto:{precioId:'puente_mixto', metric:'area'},
+  };
+  let total = 0;
+  document.querySelectorAll('.drn-card').forEach((card, i) => {
+    const d = state.drenajeTrans[i];
+    if(!d) return;
+    const tipo = TIPOS_DRN[d.tipo];
+    if(!tipo) return;
+    const precio = userPrices[tipo.precioId] || 0;
+    let cant = 0;
+    if(tipo.metric==='lineal') cant = (d.longitud||0)*(d.cantidad||0);
+    else if(tipo.metric==='volumen') cant = (d.longitud||0)*(d.ancho||0)*(d.alto||0)*(d.cantidad||0);
+    else if(tipo.metric==='area') cant = (d.longitud||0)*(d.ancho||0)*(d.cantidad||0);
+    total += cant * precio;
+  });
+  // actualizar tag del subtotal
+  const tag = document.querySelector('#tab-drenaje .panel-head .tag');
+  if(tag && tag.textContent.includes('Subtotal')) tag.textContent = 'Subtotal drenaje: ' + fmtMoneyFull(total);
+}
+function renderMantenimientoRefresh(){
+  if(!document.activeElement || !document.getElementById('tab-mantenimiento').contains(document.activeElement)) renderMantenimiento();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('section[id^="tab-"]').forEach(s => s.style.display = 'none');
+    document.getElementById('tab-' + btn.dataset.tab).style.display = 'block';
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+   PDF GENERATION
+   ════════════════════════════════════════════════════════════════════════ */
+
+const PDF_SECTIONS = [
+  {id:'portada', lab:'Portada con datos proyecto', def:true},
+  {id:'disclaimer', lab:'Disclaimer técnico AACE', def:true},
+  {id:'resumen', lab:'Resumen ejecutivo + KPIs', def:true},
+  {id:'cantidades', lab:'Cantidades calculadas + lógica', def:true},
+  {id:'drenaje', lab:'Estructuras drenaje transversal', def:true},
+  {id:'precios', lab:'Precios unitarios con fuentes', def:true},
+  {id:'desglose', lab:'Desglose detallado por partida', def:true},
+  {id:'mantenimiento', lab:'Análisis LCC mantenimiento', def:true},
+  {id:'benchmark', lab:'Comparativa benchmarks Panamá', def:true},
+  {id:'auditoria', lab:'Registro auditable de fuentes', def:true},
+];
+
+function renderPdfSections(){
+  const c = document.getElementById('pdf-sections');
+  c.innerHTML = PDF_SECTIONS.map(s => `
+    <div class="pdf-check ${s.def?'checked':''}" data-id="${s.id}">
+      <input type="checkbox" ${s.def?'checked':''} id="pdf-${s.id}">
+      <label for="pdf-${s.id}">${s.lab}</label>
+    </div>
+  `).join('');
+  
+  c.querySelectorAll('.pdf-check').forEach(el => {
+    const cb = el.querySelector('input');
+    el.addEventListener('click', e => {
+      if(e.target.tagName !== 'INPUT'){
+        cb.checked = !cb.checked;
+      }
+      el.classList.toggle('checked', cb.checked);
+    });
+  });
+}
+
+window.generatePDF = async function(){
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'letter'});
+    
+    const PRIMARY = [30, 58, 95];
+    const ACCENT = [45, 106, 159];
+    const INK = [26, 26, 46];
+    const GRAY = [107, 114, 128];
+    
+    const r = calcCosts();
+    const m = calcMantenimiento(r.total);
+    const q = r.qty._resumen;
+    
+    const prjN = document.getElementById('pdf-prj').value || state.prjNombre || 'Proyecto sin nombre';
+    const cli = document.getElementById('pdf-cli').value || '';
+    const resp = document.getElementById('pdf-resp').value || state.prjResp || '—';
+    
+    const sections = {};
+    PDF_SECTIONS.forEach(s => {
+      sections[s.id] = document.getElementById('pdf-' + s.id).checked;
+    });
+    
+    const pageW = 215.9, pageH = 279.4;
+    const margin = 15;
+    
+    // función para footer en cada página
+    function addFooter(){
+      doc.setFontSize(8);
+      doc.setTextColor(...GRAY);
+      doc.text('Aplicación desarrollada por LMM Ingeniería · EOM Vial v1.0', margin, pageH - 8);
+      doc.text(`Página ${doc.internal.getCurrentPageInfo().pageNumber}`, pageW - margin, pageH - 8, {align:'right'});
+      doc.setDrawColor(...PRIMARY);
+      doc.setLineWidth(0.3);
+      doc.line(margin, pageH - 12, pageW - margin, pageH - 12);
+    }
+    
+    function addHeader(title){
+      doc.setFillColor(...PRIMARY);
+      doc.rect(0, 0, pageW, 22, 'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      doc.text('LMM INGENIERÍA · EOM VIAL', margin, 9);
+      doc.setFontSize(13);
+      doc.setFont(undefined, 'bold');
+      doc.text(title, margin, 16);
+      doc.setFontSize(7);
+      doc.setFont(undefined, 'normal');
+      doc.text(prjN, pageW - margin, 9, {align:'right'});
+      doc.text(state.prjFecha, pageW - margin, 16, {align:'right'});
+    }
+    
+    // ─── PORTADA ───
+    if(sections.portada){
+      doc.setFillColor(...PRIMARY);
+      doc.rect(0, 0, pageW, pageH, 'F');
+      
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'normal');
+      doc.text('LMM INGENIERÍA', margin, 30);
+      
+      doc.setFontSize(7);
+      doc.text('ESPECIALISTAS EN INFRAESTRUCTURA HIDRÁULICA Y VIAL · PANAMÁ', margin, 36);
+      
+      doc.setFontSize(28);
+      doc.setFont(undefined, 'bold');
+      doc.text('Estimación de', margin, 80);
+      doc.text('Orden de Magnitud', margin, 92);
+      
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'normal');
+      doc.text('INFRAESTRUCTURA VIAL · AACE 98R-18 (CLASES 4-5)', margin, 104);
+      
+      doc.setDrawColor(255,255,255);
+      doc.setLineWidth(1);
+      doc.line(margin, 115, 90, 115);
+      
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text(prjN, margin, 140);
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      if(cli){ doc.text(`Cliente: ${cli}`, margin, 150); }
+      doc.text(`Provincia: ${state.prjProv}`, margin, 160);
+      doc.text(`Longitud: ${state.L} km`, margin, 168);
+      doc.text(`Tipo: ${state.tipo}`, margin, 176);
+      doc.text(`V diseño: ${state.vd} km/h`, margin, 184);
+      
+      doc.setFontSize(10);
+      doc.text(`Responsable técnico: ${resp}`, margin, 220);
+      doc.text(`Fecha: ${state.prjFecha}`, margin, 228);
+      
+      doc.setFontSize(8);
+      doc.text('Aplicación desarrollada por LMM Ingeniería', margin, pageH - 20);
+      doc.text('Documento auditable · No constituye presupuesto contractual', margin, pageH - 14);
+      
+      doc.addPage();
+    }
+    
+    // ─── DISCLAIMER ───
+    if(sections.disclaimer){
+      addHeader('Disclaimer Técnico');
+      let y = 35;
+      doc.setTextColor(...INK);
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text('Estimación de Orden de Magnitud — AACE 98R-18 (Clases 4-5)', margin, y);
+      y += 8;
+      
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      const disclaimerText = [
+        'Este documento constituye una Estimación de Orden de Magnitud (EOM) conforme a la clasificación',
+        'AACE International, Recommended Practice 98R-18 (Road and Rail Transportation Infrastructure).',
+        'La clase específica depende de la calidad de la información ingresada por el usuario:',
+        '',
+        '  - CLASE 5 (0-2% definición): exactitud típica -20% a +30% si se usan precios referenciales sin',
+        '    verificar y cantidades estimadas sin trabajo de campo.',
+        '  - CLASE 4 (1-15% definición): exactitud típica -15% a +30% si se usan precios reales (APUs,',
+        '    cotizaciones recientes) y cantidades calibradas con inspección de campo.',
+        '',
+        'POR QUÉ NO ES PRESUPUESTO CONTRACTUAL:',
+        '• No considera condiciones específicas del sitio sin levantamiento topográfico, geotécnico ni',
+        '  hidrológico detallado.',
+        '• No incluye análisis de tránsito de obra, manejo ambiental específico ni servidumbres particulares.',
+        '• No considera variaciones por estacionalidad, condiciones de mercado o materias primas.',
+        '• No reemplaza los estudios requeridos por la Ley 22 de 2006 ni normas del MOP Panamá.',
+        '',
+        'PARA QUÉ SÍ SIRVE:',
+        '• Evaluación temprana de viabilidad económica',
+        '• Comparación de alternativas conceptuales',
+        '• Sustento para solicitar fondos de pre-inversión',
+        '• Análisis de sensibilidad ante cambios paramétricos',
+        '• Verificación de razonabilidad de presupuestos detallados',
+        '',
+        'RECOMENDACIÓN: Avanzar a estudios Clase 3 o superior (factibilidad/definitivo) antes de licitar.',
+        'Considerar contingencias específicas según condiciones del proyecto.',
+      ];
+      
+      disclaimerText.forEach(line => {
+        doc.text(line, margin, y);
+        y += 5;
+      });
+      
+      addFooter();
+      doc.addPage();
+    }
+    
+    // ─── RESUMEN EJECUTIVO ───
+    if(sections.resumen){
+      addHeader('Resumen Ejecutivo');
+      let y = 32;
+      
+      doc.setTextColor(...INK);
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text(prjN, margin, y);
+      y += 7;
+      
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Provincia: ${state.prjProv} · ${state.L} km · V=${state.vd} km/h · TPDA ${state.TPDA} (${state.cam}% camiones)`, margin, y);
+      y += 5;
+      doc.text(`Topografía: ${state.terPlano}% plano · ${state.terOndu}% ondulado · ${state.terMont}% montañoso`, margin, y);
+      y += 10;
+      
+      // KPIs grandes
+      const kpis = [
+        {lab:'COSTO INICIAL', val:fmtMoneyFull(r.total), sub:fmtMoneyFull(r.totalPorKm)+'/km'},
+        {lab:'VPN MANTENIMIENTO '+state.mantHorizonte+'a', val:fmtMoneyFull(m.vpn_mant), sub:fmtMoneyFull(m.anualidad)+'/año'},
+        {lab:'COSTO TOTAL CICLO VIDA', val:fmtMoneyFull(m.costo_ciclo_total), sub:fmtMoneyFull(m.porKm_total/state.mantHorizonte)+'/km/año'},
+      ];
+      
+      const kpiW = (pageW - 2*margin) / 3;
+      kpis.forEach((k,i)=>{
+        const x = margin + i*kpiW;
+        doc.setFillColor(245,247,250);
+        doc.rect(x+2, y, kpiW-4, 26, 'F');
+        doc.setDrawColor(...PRIMARY);
+        doc.setLineWidth(1);
+        doc.line(x+2, y, x+kpiW-2, y);
+        doc.setFontSize(7);
+        doc.setTextColor(...GRAY);
+        doc.text(k.lab, x+5, y+5);
+        doc.setFontSize(14);
+        doc.setTextColor(...PRIMARY);
+        doc.setFont(undefined, 'bold');
+        doc.text(k.val, x+5, y+14);
+        doc.setFontSize(8);
+        doc.setTextColor(...INK);
+        doc.setFont(undefined, 'normal');
+        doc.text(k.sub, x+5, y+22);
+      });
+      y += 35;
+      
+      // Sección transversal
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(...PRIMARY);
+      doc.text('Sección transversal', margin, y);
+      y += 7;
+      
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(...INK);
+      const seccData = [
+        ['Ancho calzada', fmt(q.anchoCalzada,1) + ' m'],
+        ['Ancho plataforma', fmt(q.anchoTotal,1) + ' m'],
+        ['Carriles', state.car + ' carriles × ' + fmt(state.w,1) + ' m'],
+        ['Hombros', '2 × ' + fmt(state.berma,1) + ' m'],
+        ['Espesor rodadura', state.eR_cm + ' cm asfalto'],
+        ['Espesor base', state.eB_cm + ' cm granular'],
+        ['Espesor sub-base', state.eS_cm + ' cm'],
+        ['Volumen asfalto', fmt(q.vol_asf_ton,0) + ' ton (' + fmt(q.vol_asf_m3,0) + ' m³)'],
+        ['Volumen corte', fmt(q.volCorte/1000,1) + ' km³'],
+        ['Volumen relleno', fmt(q.volRell/1000,1) + ' km³'],
+      ];
+      
+      doc.autoTable({
+        startY: y, margin:{left:margin, right:margin},
+        head:[['Parámetro', 'Valor']],
+        body: seccData,
+        styles:{fontSize:9, cellPadding:2},
+        headStyles:{fillColor:PRIMARY, textColor:255, fontStyle:'bold'},
+        alternateRowStyles:{fillColor:[245,247,250]}
+      });
+      
+      addFooter();
+      doc.addPage();
+    }
+    
+    // ─── CANTIDADES ───
+    if(sections.cantidades){
+      addHeader('Volúmenes y Cantidades');
+      let y = 30;
+      doc.setFontSize(9);
+      doc.setTextColor(...INK);
+      doc.text('Parámetros editables aplicados:', margin, y);
+      y += 5;
+      
+      const paramsCant = [
+        ['% Corte / Relleno', state.pctCorte + '% / ' + state.pctRelleno + '%'],
+        ['Factor ajuste corte', fmt(state.factCorte,2) + '×'],
+        ['Factor ajuste relleno', fmt(state.factRelleno,2) + '×'],
+        ['% Cordón cuneta', state.pctCordonCuneta + '%'],
+        ['% Subdrenes', state.pctSubdrenes + '%'],
+        ['Separación señales', state.sepSenales + ' m'],
+        ['Separación tachones', state.sepRPM + ' m'],
+        ['# Líneas pintura', state.nLineas],
+        ['% Defensa metálica', state.pctDefensa + '%'],
+        ['Densidad asfalto', state.factAsfaltoDens + ' t/m³'],
+      ];
+      
+      doc.autoTable({
+        startY: y, margin:{left:margin, right:margin},
+        head:[['Parámetro', 'Valor']],
+        body: paramsCant,
+        styles:{fontSize:8, cellPadding:1.5},
+        headStyles:{fillColor:PRIMARY, textColor:255, fontStyle:'bold', fontSize:8},
+        alternateRowStyles:{fillColor:[245,247,250]}
+      });
+      
+      y = doc.lastAutoTable.finalY + 8;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('Cantidades calculadas', margin, y);
+      y += 5;
+      
+      const cantRows = [];
+      PARTIDAS.forEach(p => {
+        if(p.unidad === '%') return;
+        const cant = r.qty[p.id];
+        if(cant > 0){
+          cantRows.push([p.nombre, p.unidad, fmt(cant, cant<10?2:0)]);
+        }
+      });
+      
+      doc.autoTable({
+        startY: y, margin:{left:margin, right:margin},
+        head:[['Partida', 'Unidad', 'Cantidad']],
+        body: cantRows,
+        styles:{fontSize:8, cellPadding:1.5},
+        headStyles:{fillColor:PRIMARY, textColor:255, fontStyle:'bold', fontSize:8},
+        columnStyles:{2:{halign:'right'}},
+        alternateRowStyles:{fillColor:[245,247,250]}
+      });
+      
+      addFooter();
+      doc.addPage();
+    }
+    
+    // ─── DRENAJE ───
+    if(sections.drenaje && state.drenajeTrans.length > 0){
+      addHeader('Drenaje Transversal');
+      let y = 30;
+      doc.setFontSize(9);
+      doc.setTextColor(...INK);
+      doc.text(`Total estructuras: ${state.drenajeTrans.length}`, margin, y);
+      y += 6;
+      
+      const drnRows = state.drenajeTrans.map((d,i) => [
+        i+1, d.tipo, d.cantidad,
+        fmt(d.longitud,2), fmt(d.ancho,2), fmt(d.alto,2)
+      ]);
+      
+      doc.autoTable({
+        startY: y, margin:{left:margin, right:margin},
+        head:[['#','Tipo','Cant','Long (m)','Ancho (m)','Alto (m)']],
+        body: drnRows,
+        styles:{fontSize:8, cellPadding:1.5},
+        headStyles:{fillColor:PRIMARY, textColor:255, fontStyle:'bold', fontSize:8},
+        alternateRowStyles:{fillColor:[245,247,250]}
+      });
+      
+      addFooter();
+      doc.addPage();
+    }
+    
+    // ─── PRECIOS UNITARIOS ───
+    if(sections.precios){
+      addHeader('Precios Unitarios y Fuentes');
+      let y = 30;
+      
+      const pcRows = [];
+      PARTIDAS.forEach(p => {
+        const price = userPrices[p.id];
+        if(price !== null && price > 0){
+          pcRows.push([p.nombre, p.unidad, fmtMoneyFull(price), userSources[p.id] || '']);
+        }
+      });
+      
+      doc.autoTable({
+        startY: y, margin:{left:margin, right:margin},
+        head:[['Partida','Unidad','P. Unit.','Fuente']],
+        body: pcRows,
+        styles:{fontSize:7, cellPadding:1.5},
+        headStyles:{fillColor:PRIMARY, textColor:255, fontStyle:'bold', fontSize:8},
+        columnStyles:{2:{halign:'right'}, 3:{cellWidth:70}},
+        alternateRowStyles:{fillColor:[245,247,250]}
+      });
+      
+      addFooter();
+      doc.addPage();
+    }
+    
+    // ─── DESGLOSE ───
+    if(sections.desglose){
+      addHeader('Desglose Detallado');
+      let y = 30;
+      
+      const dgRows = r.items.map((it,i) => [
+        i+1, it.nombre, it.unidad,
+        fmt(it.cantidad, it.cantidad<10?2:0),
+        it.precio !== null ? fmtMoneyFull(it.precio) : '⚠ falta',
+        fmtMoneyFull(it.total || 0)
+      ]);
+      dgRows.push(['','TOTAL','','','', fmtMoneyFull(r.total)]);
+      
+      doc.autoTable({
+        startY: y, margin:{left:margin, right:margin},
+        head:[['#','Partida','Unidad','Cantidad','P.Unit','Subtotal']],
+        body: dgRows,
+        styles:{fontSize:7, cellPadding:1.5},
+        headStyles:{fillColor:PRIMARY, textColor:255, fontStyle:'bold', fontSize:8},
+        columnStyles:{3:{halign:'right'}, 4:{halign:'right'}, 5:{halign:'right'}},
+        alternateRowStyles:{fillColor:[245,247,250]},
+        didParseCell: function(data){
+          if(data.row.index === dgRows.length-1){
+            data.cell.styles.fillColor = PRIMARY;
+            data.cell.styles.textColor = [255,255,255];
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      });
+      
+      addFooter();
+      doc.addPage();
+    }
+    
+    // ─── MANTENIMIENTO ───
+    if(sections.mantenimiento){
+      addHeader('Análisis Costo Ciclo Vida (LCC)');
+      let y = 30;
+      
+      doc.setFontSize(9);
+      doc.setTextColor(...INK);
+      doc.text(`Horizonte: ${state.mantHorizonte} años · Tasa descuento: ${state.mantTasa}% · Inflación: ${state.mantInflacion}%`, margin, y);
+      y += 7;
+      
+      // Eventos
+      const evtRows = state.mantEventos.filter(e => e.activo).map(e => [
+        e.desc,
+        e.periodo > 0 ? `Cada ${e.periodo}a · año ${e.anoInicio}-${e.anoFin}` : `Año ${e.anoInicio}`,
+        e.pctCosto + '%',
+        fmtMoneyFull(r.total * e.pctCosto/100) + (e.periodo>0?'/aplic.':'')
+      ]);
+      
+      doc.autoTable({
+        startY: y, margin:{left:margin, right:margin},
+        head:[['Evento','Frecuencia','% costo inicial','Monto base']],
+        body: evtRows,
+        styles:{fontSize:8, cellPadding:1.5},
+        headStyles:{fillColor:PRIMARY, textColor:255, fontStyle:'bold', fontSize:8},
+        columnStyles:{2:{halign:'right'}, 3:{halign:'right'}},
+        alternateRowStyles:{fillColor:[245,247,250]}
+      });
+      
+      y = doc.lastAutoTable.finalY + 8;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(...PRIMARY);
+      doc.text('Resumen LCC', margin, y);
+      y += 5;
+      
+      const resLcc = [
+        ['Costo inicial', fmtMoneyFull(r.total)],
+        ['Mantenimiento nominal acumulado', fmtMoneyFull(m.total_mant_nominal)],
+        ['VPN mantenimiento', fmtMoneyFull(m.vpn_mant)],
+        ['Anualidad equivalente', fmtMoneyFull(m.anualidad) + '/año'],
+        ['COSTO TOTAL CICLO VIDA (VPN)', fmtMoneyFull(m.costo_ciclo_total)],
+      ];
+      
+      doc.autoTable({
+        startY: y, margin:{left:margin, right:margin},
+        body: resLcc,
+        styles:{fontSize:9, cellPadding:2},
+        columnStyles:{1:{halign:'right', fontStyle:'bold'}},
+        alternateRowStyles:{fillColor:[245,247,250]},
+        didParseCell: function(data){
+          if(data.row.index === resLcc.length-1){
+            data.cell.styles.fillColor = PRIMARY;
+            data.cell.styles.textColor = [255,255,255];
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      });
+      
+      addFooter();
+      doc.addPage();
+    }
+    
+    // ─── BENCHMARK ───
+    if(sections.benchmark){
+      addHeader('Benchmark Panamá');
+      let y = 30;
+      
+      doc.setFontSize(9);
+      doc.setTextColor(...INK);
+      doc.text(`Comparativa con ${BENCHMARKS.length} adjudicaciones públicas reales`, margin, y);
+      y += 6;
+      
+      const bnRows = [];
+      if(r.totalPorKm > 0){
+        bnRows.push(['► TU PROYECTO', state.prjProv, '2026', state.tipo, state.L, fmtMoneyFull(r.totalPorKm)+'/km']);
+      }
+      const sorted = [...BENCHMARKS].sort((a,b)=>b.perkm-a.perkm);
+      sorted.forEach(b => {
+        bnRows.push([b.nombre.substring(0,38), b.prov, b.ano, b.tipo.substring(0,30), b.km, fmtMoneyFull(b.perkm)+'/km']);
+      });
+      
+      doc.autoTable({
+        startY: y, margin:{left:margin, right:margin},
+        head:[['Proyecto','Provincia','Año','Tipo','Km','USD/km']],
+        body: bnRows,
+        styles:{fontSize:7, cellPadding:1.3},
+        headStyles:{fillColor:PRIMARY, textColor:255, fontStyle:'bold', fontSize:7},
+        columnStyles:{4:{halign:'right'}, 5:{halign:'right', fontStyle:'bold'}},
+        alternateRowStyles:{fillColor:[245,247,250]},
+        didParseCell: function(data){
+          if(data.row.index === 0 && r.totalPorKm > 0){
+            data.cell.styles.fillColor = [232,240,248];
+            data.cell.styles.textColor = PRIMARY;
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      });
+      
+      addFooter();
+      doc.addPage();
+    }
+    
+    // ─── AUDITORÍA ───
+    if(sections.auditoria){
+      addHeader('Registro Auditable');
+      let y = 30;
+      
+      doc.setFontSize(9);
+      doc.setTextColor(...INK);
+      doc.text('Trazabilidad completa de fuentes para verificación técnica', margin, y);
+      y += 6;
+      
+      const audRows = r.items.filter(it => !it.missing).map((it, i) => [
+        i+1, it.nombre,
+        fmt(it.cantidad, it.cantidad<10?2:0) + ' ' + it.unidad,
+        fmtMoneyFull(it.precio),
+        fmtMoneyFull(it.total),
+        it.fuente || ''
+      ]);
+      
+      doc.autoTable({
+        startY: y, margin:{left:margin, right:margin},
+        head:[['#','Partida','Cantidad','P.Unit','Subtotal','Fuente']],
+        body: audRows,
+        styles:{fontSize:7, cellPadding:1.3},
+        headStyles:{fillColor:PRIMARY, textColor:255, fontStyle:'bold', fontSize:7},
+        columnStyles:{2:{halign:'right'}, 3:{halign:'right'}, 4:{halign:'right'}, 5:{cellWidth:60, fontSize:6}},
+        alternateRowStyles:{fillColor:[245,247,250]}
+      });
+      
+      addFooter();
+    }
+    
+    // ─── PÁGINA FINAL: CONTACTO LMM ───
+    doc.addPage();
+    doc.setFillColor(...PRIMARY);
+    doc.rect(0, 0, pageW, pageH, 'F');
+    
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text('LMM INGENIERÍA', margin, 30);
+    doc.setFontSize(7);
+    doc.text('ESPECIALISTAS EN INFRAESTRUCTURA HIDRÁULICA Y VIAL', margin, 36);
+    
+    doc.setFontSize(24);
+    doc.setFont(undefined, 'bold');
+    doc.text('¿Necesitas avanzar', margin, 90);
+    doc.text('a la siguiente fase?', margin, 102);
+    
+    doc.setDrawColor(255,255,255);
+    doc.setLineWidth(0.8);
+    doc.line(margin, 112, 100, 112);
+    
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    doc.text('Esta EOM es solo el primer paso de tu proyecto. Para llevarlo', margin, 130);
+    doc.text('a la realidad necesitas estudios y diseños definitivos.', margin, 138);
+    
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.text('LMM Ingeniería puede ayudarte con:', margin, 158);
+    
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    const servicios = [
+      '• Levantamiento topográfico y batimétrico',
+      '• Estudios geotécnicos y de suelos',
+      '• Estudios hidrológicos e hidráulicos',
+      '• Diseño geométrico definitivo (AASHTO/SIECA)',
+      '• Diseño estructural de pavimentos y obras de arte',
+      '• Análisis de Precios Unitarios (APU) específicos',
+      '• Especificaciones técnicas y planos constructivos',
+      '• Supervisión técnica de obras MOP',
+      '• Gestión de proyectos viales e hidráulicos',
+    ];
+    let yS = 170;
+    servicios.forEach(s => {
+      doc.text(s, margin + 4, yS);
+      yS += 7;
+    });
+    
+    // Caja contacto
+    doc.setFillColor(255,255,255);
+    doc.rect(margin, 240, pageW - 2*margin, 28, 'F');
+    
+    doc.setTextColor(...PRIMARY);
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'normal');
+    doc.text('CONTÁCTANOS', margin + 5, 248);
+    
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('lmarquez@lmmingenieria.com', margin + 5, 258);
+    
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(...GRAY);
+    doc.text('15+ años de experiencia · Proyectos MOP, IDAAN y privados · Panamá', margin + 5, 265);
+    
+    addFooter();
+    
+    // Guardar
+    const fileName = `EOM_Vial_${(prjN||'Proyecto').replace(/[^a-z0-9]/gi,'_')}_${state.prjFecha}.pdf`;
+    doc.save(fileName);
+    
+    closeModal('modal-pdf');
+    toast('PDF generado: ' + fileName);
+  } catch(err) {
+    console.error(err);
+    toast('Error generando PDF: ' + err.message, 'good');
+    alert('Error: ' + err.message);
+  }
+};
+
+/* ════════════════════════════════════════════════════════════════════════
+   INIT
+   ════════════════════════════════════════════════════════════════════════ */
+
+renderPdfSections();
+renderAll();
+</script>
+
+</body>
+</html>
