@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMM Ingeniería · Plataforma Técnica</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --primario: #1E3A5F;
+    --acento: #2D6A9F;
+    --claro: #4A90C4;
+    --texto: #1A1A2E;
+    --texto-dim: #6B7280;
+    --fondo-suave: #F5F7FA;
+    --warning: #D97706;
+    --mono: 'IBM Plex Mono', monospace;
+    --ui: Verdana, Geneva, Tahoma, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    overflow-x: hidden;
+    background: #0a0e1a;
+    color: #fff;
+    font-family: var(--ui);
+    line-height: 1.6;
+  }
+
+  /* CURSOR CUSTOM */
+  .cursor {
+    position: fixed;
+    width: 12px;
+    height: 12px;
+    background: var(--claro);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: difference;
+    transition: transform 0.2s ease;
+  }
+
+  /* PROGRESS BAR */
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background: var(--claro);
+    z-index: 9998;
+    width: 0%;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 24px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    mix-blend-mode: difference;
+    color: #fff;
+  }
+
+  nav .logo {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  nav .links {
+    display: flex;
+    gap: 32px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  nav a {
+    color: #fff;
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+  }
+
+  nav a:hover { opacity: 1; }
+
+  /* HERO CINEMATOGRÁFICO */
+  .hero {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background: radial-gradient(ellipse at center, #1E3A5F 0%, #0a0e1a 70%);
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(74, 144, 196, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74, 144, 196, 0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.5;
+  }
+
+  .hero-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--claro);
+    letter-spacing: 3px;
+    margin-bottom: 24px;
+    opacity: 0;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.5rem, 8vw, 6rem);
+    font-weight: 300;
+    text-align: center;
+    line-height: 1.05;
+    max-width: 1200px;
+    padding: 0 24px;
+    letter-spacing: -2px;
+  }
+
+  .hero h1 .word {
+    display: inline-block;
+    overflow: hidden;
+  }
+
+  .hero h1 .char {
+    display: inline-block;
+    transform: translateY(120%);
+  }
+
+  .hero h1 .highlight {
+    color: var(--claro);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .hero-sub {
+    margin-top: 32px;
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    color: var(--texto-dim);
+    max-width: 600px;
+    text-align: center;
+    padding: 0 24px;
+    opacity: 0;
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--texto-dim);
+    opacity: 0;
+  }
+
+  .scroll-indicator::before {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: var(--claro);
+    margin: 0 auto 12px;
+    animation: scrollLine 2s ease-in-out infinite;
+  }
+
+  @keyframes scrollLine {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    51% { transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+
+  /* STATS PINNED */
+  .stats-section {
+    height: 100vh;
+    background: #0a0e1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .stats-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 80px;
+    padding: 0 48px;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: var(--mono);
+    font-size: clamp(3rem, 8vw, 6rem);
+    color: var(--claro);
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--texto-dim);
+    margin-top: 16px;
+    text-transform: uppercase;
+  }
+
+  /* REP-21 PINNED HERO */
+  .rep21 {
+    height: 200vh;
+    position: relative;
+    background: #fff;
+    color: var(--texto);
+  }
+
+  .rep21-pin {
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .rep21-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--primario) 0%, var(--acento) 100%);
+    clip-path: circle(0% at 50% 50%);
+  }
+
+  .rep21-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    max-width: 900px;
+    padding: 0 24px;
+    color: #fff;
+  }
+
+  .rep21-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--claro);
+    margin-bottom: 24px;
+  }
+
+  .rep21-content h2 {
+    font-size: clamp(2.5rem, 7vw, 5rem);
+    font-weight: 300;
+    line-height: 1.05;
+    margin-bottom: 32px;
+    letter-spacing: -1px;
+  }
+
+  .rep21-content h2 em {
+    color: var(--claro);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .rep21-features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 48px;
+    text-align: left;
+  }
+
+  .feature {
+    padding: 24px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+  }
+
+  .feature-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--claro);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .feature h3 {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .feature p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.5;
+  }
+
+  .rep21-cta {
+    display: inline-block;
+    margin-top: 40px;
+    padding: 16px 36px;
+    background: var(--claro);
+    color: #fff;
+    text-decoration: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 2px;
+    border-radius: 4px;
+    transition: transform 0.3s;
+  }
+
+  .rep21-cta:hover {
+    transform: translateY(-2px);
+  }
+
+  /* ÁREAS - MÁSCARAS */
+  .areas {
+    background: #0a0e1a;
+    padding: 120px 48px;
+  }
+
+  .section-header {
+    max-width: 1200px;
+    margin: 0 auto 80px;
+  }
+
+  .section-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--claro);
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 300;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    max-width: 800px;
+  }
+
+  .area-card {
+    max-width: 1200px;
+    margin: 0 auto 160px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .area-card:nth-child(even) {
+    direction: rtl;
+  }
+
+  .area-card:nth-child(even) > * {
+    direction: ltr;
+  }
+
+  .area-image {
+    height: 500px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+  }
+
+  .area-image::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--primario);
+    z-index: 2;
+    transform-origin: left;
+  }
+
+  .area-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.2);
+  }
+
+  .area-info .num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--claro);
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+  }
+
+  .area-info h3 {
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 300;
+    margin-bottom: 24px;
+    letter-spacing: -0.5px;
+  }
+
+  .area-info p {
+    color: var(--texto-dim);
+    font-size: 15px;
+    margin-bottom: 24px;
+  }
+
+  .area-link {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--claro);
+    text-decoration: none;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--claro);
+    padding-bottom: 4px;
+    transition: gap 0.3s;
+  }
+
+  /* HERRAMIENTAS GRID */
+  .tools {
+    background: #fff;
+    color: var(--texto);
+    padding: 120px 48px;
+  }
+
+  .tools-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .tool-card {
+    padding: 32px;
+    background: var(--fondo-suave);
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.4s;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  .tool-card:hover {
+    border-color: var(--claro);
+    transform: translateY(-4px);
+  }
+
+  .tool-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--claro);
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  .tool-card h4 {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--primario);
+    margin-bottom: 12px;
+  }
+
+  .tool-card p {
+    font-size: 13px;
+    color: var(--texto-dim);
+    margin-bottom: 20px;
+  }
+
+  .tool-card a {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--acento);
+    text-decoration: none;
+    letter-spacing: 1px;
+  }
+
+  /* CTA FINAL */
+  .cta {
+    background: var(--primario);
+    padding: 120px 48px;
+    text-align: center;
+  }
+
+  .cta h2 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 300;
+    margin-bottom: 24px;
+    letter-spacing: -1px;
+    max-width: 800px;
+    margin-inline: auto;
+  }
+
+  .cta p {
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 40px;
+  }
+
+  .cta-btn {
+    display: inline-block;
+    padding: 16px 40px;
+    background: var(--claro);
+    color: #fff;
+    text-decoration: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 2px;
+    border-radius: 4px;
+  }
+
+  /* FOOTER */
+  footer {
+    background: #0a0e1a;
+    padding: 48px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--texto-dim);
+    letter-spacing: 1px;
+  }
+
+  footer a {
+    color: var(--claro);
+    text-decoration: none;
+  }
+
+  /* MOBILE */
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    nav .links { display: none; }
+    .stats-container { grid-template-columns: 1fr; gap: 40px; }
+    .rep21-features { grid-template-columns: 1fr; }
+    .area-card { grid-template-columns: 1fr; gap: 40px; margin-bottom: 80px; }
+    .area-card:nth-child(even) { direction: ltr; }
+    .area-image { height: 350px; }
+    .tools-grid { grid-template-columns: 1fr; }
+    .areas, .tools, .cta { padding: 80px 24px; }
+    .cursor { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor"></div>
+<div class="progress"></div>
+
+<nav>
+  <div class="logo">LMM·INGENIERÍA</div>
+  <div class="links">
+    <a href="#rep21">REP-21</a>
+    <a href="#areas">ÁREAS</a>
+    <a href="#tools">HERRAMIENTAS</a>
+    <a href="#cta">SUSCRIBIRSE</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-tag">PLATAFORMA TÉCNICA · LATAM</div>
+  <h1 id="hero-title">
+    Análisis sísmico, <span class="highlight">bombeo hidráulico</span> e infraestructura vial
+  </h1>
+  <p class="hero-sub">
+    Aplicación REP-21 para cálculo sísmico, herramientas de bombeo hidráulico y reportes viales. Listas para usar en el navegador.
+  </p>
+  <div class="scroll-indicator">SCROLL</div>
+</section>
+
+<!-- STATS PINNED -->
+<section class="stats-section">
+  <div class="stats-container">
+    <div class="stat">
+      <div class="stat-num" data-target="7">0</div>
+      <div class="stat-label">Herramientas</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" data-target="3">0</div>
+      <div class="stat-label">Áreas Técnicas</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" data-target="120">0</div>
+      <div class="stat-label">Min → 2 Min</div>
+    </div>
+  </div>
+</section>
+
+<!-- REP-21 PINNED -->
+<section class="rep21" id="rep21">
+  <div class="rep21-pin">
+    <div class="rep21-bg"></div>
+    <div class="rep21-content">
+      <div class="rep21-tag">// 01 · PROYECTO PRINCIPAL</div>
+      <h2>REP-21 · Análisis <em>Sísmico</em></h2>
+      <p style="color: rgba(255,255,255,0.8); max-width: 600px; margin: 0 auto;">
+        Cálculo sísmico estructural basado en el Reglamento de Diseño Estructural para Panamá. Procesamiento automatizado con validación normativa.
+      </p>
+
+      <div class="rep21-features">
+        <div class="feature">
+          <div class="feature-num">01</div>
+          <h3>Cálculo en 2 min</h3>
+          <p>vs 2h en Excel tradicional</p>
+        </div>
+        <div class="feature">
+          <div class="feature-num">02</div>
+          <h3>Validación CDS</h3>
+          <p>Detecta errores normativos auto</p>
+        </div>
+        <div class="feature">
+          <div class="feature-num">03</div>
+          <h3>Reporte PDF</h3>
+          <p>Con referencias normativas</p>
+        </div>
+      </div>
+
+      <a href="https://lmmtool.github.io/sismo/index.html" class="rep21-cta">ABRIR REP-21 →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ÁREAS -->
+<section class="areas" id="areas">
+  <div class="section-header">
+    <div class="section-tag">// 02 · ESPECIALIDADES</div>
+    <h2 class="section-title">Áreas técnicas organizadas por <em style="color: var(--claro); font-style: italic;">disciplina</em></h2>
+  </div>
+
+  <div class="area-card">
+    <div class="area-image">
+      <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=1200&q=80" alt="Sísmico">
+    </div>
+    <div class="area-info">
+      <div class="num">01 / 03</div>
+      <h3>Análisis Sísmico</h3>
+      <p>App REP-21 para cálculo sísmico estructural con validación normativa y reportes automatizados.</p>
+      <a href="https://lmmtool.github.io/sismo/index.html" class="area-link">VER APLICACIÓN →</a>
+    </div>
+  </div>
+
+  <div class="area-card">
+    <div class="area-image">
+      <img src="https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=1200&q=80" alt="Hidráulica">
+    </div>
+    <div class="area-info">
+      <div class="num">02 / 03</div>
+      <h3>Hidráulica y Saneamiento</h3>
+      <p>Dimensionamiento de tuberías, pozos, captaciones y redes sanitarias. 5 herramientas activas.</p>
+      <a href="#tools" class="area-link">VER HERRAMIENTAS →</a>
+    </div>
+  </div>
+
+  <div class="area-card">
+    <div class="area-image">
+      <img src="https://lmmtool.github.io/img/carretera.jpg" alt="Vial">
+    </div>
+    <div class="area-info">
+      <div class="num">03 / 03</div>
+      <h3>Infraestructura Vial</h3>
+      <p>Evaluación operacional y análisis técnico aplicado a redes viales panameñas.</p>
+      <a href="https://lmmtool.github.io/Vial/eom-vial-panama.html" class="area-link">VER REPORTE EOM →</a>
+    </div>
+  </div>
+</section>
+
+<!-- HERRAMIENTAS -->
+<section class="tools" id="tools">
+  <div class="section-header">
+    <div class="section-tag" style="color: var(--acento)">// 03 · CATÁLOGO</div>
+    <h2 class="section-title" style="color: var(--primario)">Herramientas técnicas</h2>
+  </div>
+
+  <div class="tools-grid">
+    <div class="tool-card">
+      <div class="tool-tag">HIDRÁULICA</div>
+      <h4>Nomograma de Tuberías</h4>
+      <p>Cálculo de caudal, velocidad y pérdida de carga en conducciones a presión.</p>
+      <a href="https://lmmtool.github.io/agua/excel/Nomograma%20Tuberias.html">ABRIR →</a>
+    </div>
+    <div class="tool-card">
+      <div class="tool-tag">BOMBEO · POZO</div>
+      <h4>Bomba Sumergible</h4>
+      <p>Cálculo TDH, BHP y motor NEMA. Rango 10–100 gpm · TDH ≤ 984 ft.</p>
+      <a href="https://lmmtool.github.io/agua/excel/calculadora_POZO.html">ABRIR →</a>
+    </div>
+    <div class="tool-card">
+      <div class="tool-tag">BOMBEO · SANITARIA</div>
+      <h4>Estación Aguas Residuales</h4>
+      <p>Cálculo TDH, BHP y motor NEMA. Rango 100–2083 gpm. Factor K sólidos.</p>
+      <a href="https://lmmtool.github.io/agua/excel/calculadora_SANITARIA.html">ABRIR →</a>
+    </div>
+    <div class="tool-card">
+      <div class="tool-tag">BOMBEO · TOMA</div>
+      <h4>Succión Río o Embalse</h4>
+      <p>Cálculo TDH, BHP y motor NEMA. Rango 100–6944 gpm. NPSH crítico.</p>
+      <a href="https://lmmtool.github.io/agua/excel/calculadora_TOMA.html">ABRIR →</a>
+    </div>
+    <div class="tool-card">
+      <div class="tool-tag">PDF · CAMPO</div>
+      <h4>Nomograma Imprimible</h4>
+      <p>Versión imprimible del nomograma para consulta directa en obra.</p>
+      <a href="https://lmmtool.github.io/agua/pdfs/Nomograma_Campo_Tuberias.pdf">ABRIR →</a>
+    </div>
+    <div class="tool-card">
+      <div class="tool-tag">VIAL · PANAMÁ</div>
+      <h4>Reporte EOM</h4>
+      <p>Estimación Operacional de Mantenimiento aplicada a infraestructura panameña.</p>
+      <a href="https://lmmtool.github.io/Vial/eom-vial-panama.html">ABRIR →</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="cta">
+  <h2>Nuevas herramientas en tu correo</h2>
+  <p>Te avisamos cuando publiquemos calculadoras, nomogramas o apps nuevas. Sin spam.</p>
+  <a href="https://lmmtool.github.io/#registro" class="cta-btn">SUSCRIBIRME →</a>
+</section>
+
+<footer>
+  © 2026 · ING. LUIS MÁRQUEZ · LMM INGENIERÍA · LATAM · <a href="https://www.linkedin.com/in/luis-m%C3%A1rquezlm/es/">LINKEDIN</a>
+</footer>
+
+<!-- GSAP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<script>
+  gsap.registerPlugin(ScrollTrigger);
+
+  // CURSOR
+  const cursor = document.querySelector('.cursor');
+  window.addEventListener('mousemove', e => {
+    gsap.to(cursor, { x: e.clientX - 6, y: e.clientY - 6, duration: 0.3 });
+  });
+  document.querySelectorAll('a, .tool-card').forEach(el => {
+    el.addEventListener('mouseenter', () => gsap.to(cursor, { scale: 3, duration: 0.3 }));
+    el.addEventListener('mouseleave', () => gsap.to(cursor, { scale: 1, duration: 0.3 }));
+  });
+
+  // PROGRESS BAR
+  gsap.to('.progress', {
+    width: '100%',
+    ease: 'none',
+    scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 0.3 }
+  });
+
+  // SPLIT HERO TITLE EN LETRAS
+  const title = document.querySelector('#hero-title');
+  const words = title.innerHTML.split(' ');
+  title.innerHTML = words.map(w => {
+    if (w.includes('span')) return `<span class="word">${w}</span>`;
+    return `<span class="word">${[...w].map(c => `<span class="char">${c}</span>`).join('')}</span>`;
+  }).join(' ');
+
+  // SPLIT highlight chars también
+  document.querySelectorAll('.highlight').forEach(el => {
+    const text = el.textContent;
+    el.innerHTML = [...text].map(c => `<span class="char">${c === ' ' ? '&nbsp;' : c}</span>`).join('');
+  });
+
+  // HERO ANIMATION
+  const heroTl = gsap.timeline({ delay: 0.2 });
+  heroTl
+    .to('.hero-tag', { opacity: 1, duration: 0.8 })
+    .to('.char', { y: 0, duration: 1, stagger: 0.015, ease: 'power3.out' }, '-=0.4')
+    .to('.hero-sub', { opacity: 1, duration: 1 }, '-=0.6')
+    .to('.scroll-indicator', { opacity: 1, duration: 0.8 }, '-=0.4');
+
+  // STATS COUNT UP
+  document.querySelectorAll('.stat-num').forEach(el => {
+    const target = parseInt(el.dataset.target);
+    ScrollTrigger.create({
+      trigger: el,
+      start: 'top 80%',
+      onEnter: () => {
+        gsap.to(el, {
+          innerText: target,
+          duration: 2,
+          snap: { innerText: 1 },
+          ease: 'power2.out'
+        });
+      }
+    });
+  });
+
+  // REP-21 PIN + CIRCLE REVEAL
+  gsap.to('.rep21-bg', {
+    clipPath: 'circle(150% at 50% 50%)',
+    ease: 'none',
+    scrollTrigger: {
+      trigger: '.rep21',
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: 1
+    }
+  });
+
+  // REP-21 features stagger
+  gsap.from('.feature', {
+    y: 60,
+    opacity: 0,
+    duration: 0.8,
+    stagger: 0.15,
+    scrollTrigger: {
+      trigger: '.rep21-features',
+      start: 'top 70%'
+    }
+  });
+
+  // ÁREAS - MÁSCARAS reveal + parallax img
+  document.querySelectorAll('.area-card').forEach((card, i) => {
+    const mask = card.querySelector('.area-image::before');
+    const img = card.querySelector('.area-image img');
+    const imageEl = card.querySelector('.area-image');
+
+    // Máscara
+    gsap.to(imageEl, {
+      '--mask-scale': 0,
+      scrollTrigger: { trigger: card, start: 'top 70%' }
+    });
+
+    gsap.fromTo(imageEl,
+      { clipPath: 'inset(0 100% 0 0)' },
+      {
+        clipPath: 'inset(0 0% 0 0)',
+        duration: 1.5,
+        ease: 'power3.inOut',
+        scrollTrigger: { trigger: card, start: 'top 70%' }
+      }
+    );
+
+    // Parallax img
+    gsap.to(img, {
+      yPercent: -15,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: card,
+        start: 'top bottom',
+        end: 'bottom top',
+        scrub: 1
+      }
+    });
+
+    // Info reveal
+    gsap.from(card.querySelector('.area-info'), {
+      y: 60,
+      opacity: 0,
+      duration: 1,
+      scrollTrigger: { trigger: card, start: 'top 70%' }
+    });
+  });
+
+  // TOOL CARDS
+  ScrollTrigger.batch('.tool-card', {
+    onEnter: batch => gsap.to(batch, {
+      opacity: 1,
+      y: 0,
+      duration: 0.8,
+      stagger: 0.1,
+      ease: 'power3.out'
+    }),
+    start: 'top 85%'
+  });
+
+  // SECTION TITLES reveal
+  gsap.utils.toArray('.section-title').forEach(t => {
+    gsap.from(t, {
+      y: 40,
+      opacity: 0,
+      duration: 1,
+      scrollTrigger: { trigger: t, start: 'top 85%' }
+    });
+  });
+</script>
+
+</body>
+</html>
