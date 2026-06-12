@@ -589,23 +589,7 @@ footer span { color: rgba(255,255,255,0.7); margin: 0 8px; }
   letter-spacing: 0.5px;
 }
 
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  body {
-    grid-template-columns: 1fr;
-    grid-template-rows: 56px auto 1fr 32px;
-    grid-template-areas: "header" "sidebar" "map" "footer";
-  }
-  aside {
-    max-height: 50vh;
-    border-right: none;
-    border-bottom: 1px solid var(--border-light);
-  }
-  .header-right .subtitle { display: none; }
-  .legend { bottom: 42px; right: 12px; padding: 10px 12px; min-width: 250px; max-width: 280px; }
-  .heatmap-gradient { height: 18px; }
-  .heatmap-ticks { font-size: 9px; }
-}
+/* RESPONSIVE — ver bloque v2.1 al final del archivo (reescrito) */
 
 .loader {
   display: inline-block;
@@ -1058,4 +1042,217 @@ footer span { color: rgba(255,255,255,0.7); margin: 0 8px; }
   text-align: center;
   pointer-events: none;
   white-space: nowrap;
+}
+
+/* ============================================================
+   v2.1 — UX: botón secundario, loader de mapa, leyenda
+   colapsable, toasts (compartir / validación inline)
+============================================================ */
+
+/* Botón secundario (outline) */
+.btn-secondary {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-secondary:hover { background: var(--accent); color: white; }
+.btn-secondary:active { transform: translateY(1px); }
+
+/* Loader sobre el mapa */
+#map { position: relative; }
+.map-loader {
+  position: absolute;
+  inset: 0;
+  z-index: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(245, 247, 250, 0.75);
+  transition: opacity 0.3s;
+}
+.map-loader.hidden { opacity: 0; pointer-events: none; }
+.map-loader-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  padding: 12px 16px;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+}
+.map-loader.error .map-loader-box { border-left-color: var(--error); color: var(--error); }
+
+/* Leyenda colapsable */
+.legend-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+}
+.legend-chevron {
+  font-size: 11px;
+  color: var(--text-dim);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+#legend.collapsed .legend-chevron { transform: rotate(-90deg); }
+#legend.collapsed .legend-scale { display: none; }
+#legend.collapsed { min-width: 0; }
+#legend .legend-title { margin-bottom: 0; }
+
+/* Toasts (notificaciones no bloqueantes) */
+#toast-container {
+  position: fixed;
+  left: 50%;
+  bottom: 56px;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  width: max-content;
+  max-width: 92vw;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--primary);
+  color: white;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 11px 14px;
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+  border-left: 3px solid var(--highlight);
+  /* Visible por defecto (no se depende de una transición para mostrarlo). */
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.25s, transform 0.25s;
+  max-width: 100%;
+}
+.toast.hiding { opacity: 0; transform: translateY(8px); }
+.toast.toast-error { border-left-color: var(--error); }
+.toast.toast-success { border-left-color: #10B981; }
+.toast-icon { flex-shrink: 0; }
+
+/* ============================================================
+   v2.1 — RESPONSIVE MÓVIL (reescrito)
+   Va al final del archivo para ganar en la cascada sobre los
+   estilos v2 (las media queries no añaden especificidad).
+============================================================ */
+@media (max-width: 768px) {
+  /* La página fluye y hace scroll natural en vez del split fijo 50/50 */
+  html, body { height: auto; overflow: visible; }
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* HEADER compacto y fijo arriba al hacer scroll */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 1200;
+    min-height: 56px;
+    padding: 0 12px;
+    flex: 0 0 auto;
+  }
+  .header-left { gap: 8px; }
+  .logo { font-size: 13px; }
+  .header-right { gap: 12px; font-size: 11px; }
+  .header-right .subtitle { display: none; }
+
+  /* SIDEBAR: altura natural, sin scroll interno cortado */
+  aside {
+    max-height: none;
+    overflow: visible;
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+    flex: 0 0 auto;
+  }
+  .tabs { top: 56px; }
+
+  /* Inputs a 16px: evita el zoom automático de iOS al enfocar */
+  input, select, .input-full, .select-full,
+  .grid-2 input, .grid-3 input,
+  .grid-2 select, .grid-3 select { font-size: 16px; }
+
+  /* Objetivos táctiles más grandes */
+  .mode-toggle button, .layer-toggle button { padding: 12px 8px; }
+  .info-icon { width: 18px; height: 18px; line-height: 18px; font-size: 11px; }
+
+  /* MAPA con altura cómoda; ya no compite con el formulario */
+  #map { height: 58vh; min-height: 320px; flex: 0 0 auto; }
+
+  /* LEYENDA como bloque debajo del mapa (deja de taparlo) */
+  .legend {
+    position: static;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    box-shadow: none;
+    flex: 0 0 auto;
+  }
+
+  /* Contenido ancho (tablas kv, memoria) con scroll horizontal propio */
+  .memoria-section, .adv-section { overflow-x: auto; }
+  .kv-table { font-size: 9px; }
+
+  /* MODALES ajustados a pantalla chica */
+  .modal { padding: 10px; }
+  .modal-content { padding: 22px 18px; max-height: 88vh; }
+  .modal-content h2 { font-size: 15px; }
+
+  /* FOOTER flexible */
+  footer {
+    min-height: 32px;
+    padding: 8px 10px;
+    text-align: center;
+    flex-wrap: wrap;
+    flex: 0 0 auto;
+  }
+
+  .heatmap-gradient { height: 20px; }
+  .heatmap-ticks { font-size: 9px; }
+}
+
+/* Teléfonos angostos (≤380px) */
+@media (max-width: 380px) {
+  .header-right { gap: 9px; font-size: 10px; }
+  .logo { font-size: 12px; }
+  .version-badge { padding: 2px 5px; }
+  .result-card .value { font-size: 16px; }
 }

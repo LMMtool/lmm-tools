@@ -3,12 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Visor REP-21 y calculadora sísmica para Panamá v2.0. Herramienta generada por LMM Ingeniería.">
+<meta name="description" content="Visor del REP-2021 y calculadora sísmica gratuita para Panamá: espectro de diseño, Cs, CDS, vivienda y geotecnia (ASCE 7-05 + REP-21). Por LMM Ingeniería.">
 <meta name="author" content="LMM Ingeniería">
-<title>SismoPanamá v2.0 — REP-21 · LMM Ingeniería</title>
+<meta name="theme-color" content="#1E3A5F">
+<title>SismoPanamá — Calculadora sísmica REP-21 · LMM Ingeniería</title>
+<link rel="canonical" href="https://lmmtool.github.io/sismo/">
+
+<!-- Favicons -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<!-- Open Graph / redes sociales (WhatsApp, Facebook, LinkedIn) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SismoPanamá">
+<meta property="og:title" content="SismoPanamá — Calculadora sísmica REP-21">
+<meta property="og:description" content="Visor del REP-2021 y calculadora sísmica gratuita para Panamá: espectro de diseño, Cs, CDS, vivienda y geotecnia. Por LMM Ingeniería.">
+<meta property="og:url" content="https://lmmtool.github.io/sismo/">
+<meta property="og:image" content="https://lmmtool.github.io/sismo/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="es_PA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SismoPanamá — Calculadora sísmica REP-21">
+<meta name="twitter:description" content="Calculadora sísmica gratuita para Panamá (REP-2021 + ASCE 7-05). Por LMM Ingeniería.">
+<meta name="twitter:image" content="https://lmmtool.github.io/sismo/og-image.png">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="style.css"/>
+<link rel="stylesheet" href="style.css?v=2.1"/>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
@@ -70,6 +92,7 @@
       <div id="results-pane">
         <div class="empty-state">Cargando mapas REP-21...</div>
       </div>
+      <button class="btn-secondary" type="button" onclick="copyShareLink()" style="margin-top:10px;">⤤ Compartir enlace de esta ubicación</button>
     </div>
 
     <div class="disclaimer">
@@ -302,14 +325,25 @@
     </div>
 
     <button class="btn-primary" id="btn-pdf" style="display:none;" onclick="descargarPDF()">DESCARGAR REPORTE PDF</button>
+    <button class="btn-secondary" id="btn-share" type="button" style="display:none;" onclick="copyShareLink()">⤤ Compartir este cálculo</button>
   </div>
 </aside>
 
-<div id="map"></div>
+<div id="map">
+  <div id="map-loader" class="map-loader">
+    <div class="map-loader-box">
+      <span class="loader"></span>
+      <span id="map-loader-text">Cargando mapas REP-21…</span>
+    </div>
+  </div>
+</div>
 <div id="contour-svg-overlay"></div>
 
 <div class="legend" id="legend">
-  <div class="legend-title">Sa (g) — <span id="legend-period">Ss (0.2 s)</span></div>
+  <button class="legend-toggle" id="legend-toggle" type="button" aria-expanded="true" aria-controls="legend-scale" onclick="toggleLegend()">
+    <span class="legend-title">Sa (g) — <span id="legend-period">Ss (0.2 s)</span></span>
+    <span class="legend-chevron" aria-hidden="true">▾</span>
+  </button>
   <div class="legend-scale" id="legend-scale"></div>
 </div>
 
@@ -412,10 +446,12 @@
   </div>
 </div>
 
-<script src="lib/raster.js"></script>
-<script src="lib/seismic-calc.js"></script>
-<script src="lib/pdf-gen.js"></script>
-<script src="app.js"></script>
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<script src="lib/raster.js?v=2.1"></script>
+<script src="lib/seismic-calc.js?v=2.1"></script>
+<script src="lib/pdf-gen.js?v=2.1"></script>
+<script src="app.js?v=2.1"></script>
 
 </body>
 </html>

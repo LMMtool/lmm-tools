@@ -51,6 +51,185 @@ function widthForContour(value, isOficial, isMajor) {
   }
 }
 
+// ============================================================
+// UX v2.1: toasts, loader de mapa, leyenda colapsable, compartir
+// ============================================================
+function showToast(msg, type = 'info', ms = 3800) {
+  const cont = document.getElementById('toast-container');
+  if (!cont) { console.warn(msg); return; }
+  const icons = { info: 'ℹ', error: '⛔', success: '✓' };
+  const el = document.createElement('div');
+  el.className = 'toast' + (type === 'error' ? ' toast-error' : type === 'success' ? ' toast-success' : '');
+  el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  el.innerHTML = '<span class="toast-icon"></span><span class="toast-msg"></span>';
+  el.querySelector('.toast-icon').textContent = icons[type] || icons.info;
+  el.querySelector('.toast-msg').textContent = msg;
+  cont.appendChild(el);             // visible de inmediato (opacity:1 por defecto)
+  setTimeout(() => {
+    el.classList.add('hiding');     // la salida anima si el navegador lo permite
+    setTimeout(() => el.remove(), 300);
+  }, ms);
+}
+
+function hideMapLoader() {
+  const l = document.getElementById('map-loader');
+  if (l) l.classList.add('hidden');
+}
+function showMapLoaderError(msg) {
+  const l = document.getElementById('map-loader');
+  const t = document.getElementById('map-loader-text');
+  if (l) { l.classList.remove('hidden'); l.classList.add('error'); }
+  if (t) t.textContent = msg;
+  const sp = l && l.querySelector('.loader');
+  if (sp) sp.style.display = 'none';
+}
+
+function toggleLegend() {
+  const legend = document.getElementById('legend');
+  const btn = document.getElementById('legend-toggle');
+  const collapsed = legend.classList.toggle('collapsed');
+  if (btn) btn.setAttribute('aria-expanded', String(!collapsed));
+}
+
+// --- Compartir / permalink (estado en el hash de la URL) ---
+function getShareState() {
+  const s = {};
+  const activeTab = document.querySelector('.tab.active');
+  s.tab = activeTab ? activeTab.dataset.tab : 'consulta';
+  const coord = getCurrentLatLng();
+  if (coord) { s.lat = coord.lat.toFixed(4); s.lng = coord.lng.toFixed(4); }
+  s.layer = currentLayer;
+  if (s.tab === 'calculo') {
+    const tipo = document.getElementById('tipo-estructura').value;
+    s.tipo = tipo;
+    s.em = espectroMode;
+    if (espectroMode === 'manual') {
+      s.ssm = document.getElementById('ss-manual').value;
+      s.s1m = document.getElementById('s1-manual').value;
+      s.pgam = document.getElementById('pga-manual').value;
+    }
+    if (tipo === 'edificio' || tipo === 'infra') {
+      s.sitio = document.getElementById('clase-sitio').value;
+      s.riesgo = document.getElementById('riesgo').value;
+      s.cat = document.getElementById('categoria-sistema').value;
+      s.sys = document.getElementById('sistema').value;
+      s.hn = document.getElementById('hn-edif').value;
+      s.tper = document.getElementById('modo-periodo').value;
+      if (s.tper === 'manual') s.tval = document.getElementById('periodo-manual-val').value;
+      if (s.sys === 'custom') {
+        s.cR = document.getElementById('custom-R').value;
+        s.cO = document.getElementById('custom-omega').value;
+        s.cC = document.getElementById('custom-Cd').value;
+      }
+    } else if (tipo === 'vivienda') {
+      s.sitio = document.getElementById('clase-sitio-viv').value;
+      s.sp = document.getElementById('suelos-problema').checked ? 1 : 0;
+      s.irr = document.getElementById('irregularidad').checked ? 1 : 0;
+    } else if (tipo === 'geotecnica') {
+      s.sitio = document.getElementById('clase-sitio-geo').value;
+      s.geo = document.getElementById('tipo-geotecnia').value;
+      s.kh = document.getElementById('metodo-kh').value;
+      s.kv = document.getElementById('ratio-kv').value;
+    }
+  }
+  return s;
+}
+
+function buildShareURL() {
+  const s = getShareState();
+  const params = new URLSearchParams();
+  Object.entries(s).forEach(([k, v]) => { if (v !== '' && v != null) params.set(k, v); });
+  return location.origin + location.pathname + '#' + params.toString();
+}
+
+async function copyShareLink() {
+  const url = buildShareURL();
+  let ok = false;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(url);
+      ok = true;
+    }
+  } catch (e) { ok = false; }
+  try { history.replaceState(null, '', url); } catch (e) {}
+  if (ok) showToast('Enlace copiado al portapapeles', 'success');
+  else window.prompt('Copiá este enlace:', url);
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (!el || val == null || val === '') return;
+  // No romper un <select> con un value inexistente (hash viejo o manipulado):
+  // asignarlo dejaría el select vacío (selectedIndex = -1).
+  if (el.tagName === 'SELECT' &&
+      !Array.from(el.options).some(o => o.value === String(val))) return;
+  el.value = val;
+}
+
+// Aplica el estado del hash a la UI. Devuelve la pestaña a mostrar, o null.
+function restoreFromURL() {
+  const hash = location.hash.replace(/^#/, '');
+  if (!hash) return null;
+  const p = new URLSearchParams(hash);
+  if (![...p.keys()].length) return null;
+
+  if (p.get('layer')) {
+    currentLayer = p.get('layer');
+    const order = ['ss', 's1', 'pga'];
+    document.querySelectorAll('.layer-toggle button').forEach((b, i) =>
+      b.classList.toggle('active', order[i] === currentLayer));
+  }
+  if (p.get('lat') && p.get('lng')) {
+    coordMode = 'geo';
+    setVal('lat-input', p.get('lat'));
+    setVal('lng-input', p.get('lng'));
+  }
+
+  const tab = p.get('tab') || 'consulta';
+  if (tab === 'calculo' && p.get('tipo')) {
+    setVal('tipo-estructura', p.get('tipo'));
+    onTipoEstructuraChange();
+    if (p.get('em') === 'manual') {
+      setEspectroMode('manual');
+      setVal('ss-manual', p.get('ssm'));
+      setVal('s1-manual', p.get('s1m'));
+      setVal('pga-manual', p.get('pgam'));
+    }
+    const tipo = p.get('tipo');
+    if (tipo === 'edificio' || tipo === 'infra') {
+      setVal('clase-sitio', p.get('sitio'));
+      setVal('riesgo', p.get('riesgo'));
+      setVal('categoria-sistema', p.get('cat'));
+      updateSistemas();
+      setVal('sistema', p.get('sys'));
+      onSistemaChange();
+      setVal('hn-edif', p.get('hn'));
+      setVal('modo-periodo', p.get('tper'));
+      onModoPeriodoChange();
+      if (p.get('tval')) setVal('periodo-manual-val', p.get('tval'));
+      if (p.get('sys') === 'custom') {
+        setVal('custom-R', p.get('cR'));
+        setVal('custom-omega', p.get('cO'));
+        setVal('custom-Cd', p.get('cC'));
+      }
+    } else if (tipo === 'vivienda') {
+      setVal('clase-sitio-viv', p.get('sitio'));
+      const sp = document.getElementById('suelos-problema');
+      const irr = document.getElementById('irregularidad');
+      if (sp) sp.checked = p.get('sp') === '1';
+      if (irr) irr.checked = p.get('irr') === '1';
+    } else if (tipo === 'geotecnica') {
+      setVal('clase-sitio-geo', p.get('sitio'));
+      setVal('tipo-geotecnia', p.get('geo'));
+      onTipoGeoChange();
+      setVal('metodo-kh', p.get('kh'));
+      onMetodoKhChange();
+      setVal('ratio-kv', p.get('kv'));
+    }
+  }
+  return tab;
+}
+
 async function init() {
   try {
     manifest = await fetch('data/manifest.json').then(r => r.json());
@@ -72,9 +251,11 @@ async function init() {
       '<div class="empty-state">Hacé clic en el mapa o ingresá una coordenada.</div>';
     renderContours();
     queryCoord();
+    hideMapLoader();
   } catch (err) {
     document.getElementById('results-pane').innerHTML =
       '<div class="error-box">Error cargando datos: ' + err.message + '</div>';
+    showMapLoaderError('No se pudieron cargar los mapas REP-21. Verificá tu conexión y recargá.');
   }
 
   document.querySelectorAll('.tab').forEach(btn => {
@@ -101,6 +282,23 @@ async function init() {
   document.getElementById('version-badge').addEventListener('click', () =>
     showModal('modal-changelog')
   );
+
+  // Restaurar estado desde un enlace compartido (#lat=...&lng=...&tab=...)
+  try {
+    const restoredTab = restoreFromURL();
+    if (restoredTab && manager && manager.loaded) {
+      renderContours();          // refleja la capa restaurada en el mapa/leyenda
+      switchTab(restoredTab);
+      queryCoord();
+      // Solo recalcular si el tipo restaurado es válido (un hash manipulado o
+      // viejo podría traer un tipo inexistente que dejaría el select vacío).
+      const tipoSel = document.getElementById('tipo-estructura').value;
+      const tipoValido = ['edificio', 'infra', 'vivienda', 'geotecnica'].includes(tipoSel);
+      if (restoredTab === 'calculo' && tipoValido) calcular();
+    }
+  } catch (err) {
+    console.error('No se pudo restaurar el enlace compartido:', err);
+  }
 }
 
 function initMap() {
@@ -138,6 +336,17 @@ function initMap() {
   });
 
   map.on('zoomend moveend', updateLabels);
+
+  // Re-render del mapa cuando cambian las dimensiones del contenedor
+  // (rotación de pantalla, teclado en móvil, cambio de breakpoint).
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => map && map.invalidateSize(), 200);
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => map && map.invalidateSize(), 300);
+  });
 }
 
 // ============================================================
@@ -504,6 +713,7 @@ function onTipoEstructuraChange() {
   document.getElementById('calc-results').style.display = 'none';
   document.getElementById('spectrum-section').style.display = 'none';
   document.getElementById('btn-pdf').style.display = 'none';
+  document.getElementById('btn-share').style.display = 'none';
 }
 
 function updateSistemas() {
@@ -687,17 +897,17 @@ function setupTooltips() {
 
 function calcular() {
   if (!manager || !manager.loaded) {
-    alert('Los datos aún no han cargado.');
+    showToast('Los datos aún no han cargado.', 'error');
     return;
   }
   const coord = getCurrentLatLng();
   if (!coord) {
-    alert('Coordenada inválida.');
+    showToast('Coordenada inválida.', 'error');
     return;
   }
   const vals = manager.queryAll(coord.lat, coord.lng);
   if (vals.ss === null) {
-    alert('Coordenada fuera del territorio cubierto.');
+    showToast('Coordenada fuera del territorio cubierto por los mapas REP-21.', 'error');
     return;
   }
 
@@ -725,7 +935,7 @@ function calcular() {
     
     const hnVal = parseFloat(document.getElementById('hn-edif').value);
     if (isNaN(hnVal) || hnVal <= 0) {
-      alert('Altura hn debe ser positiva.');
+      showToast('La altura hn debe ser un número positivo.', 'error');
       return;
     }
     input.hn = hnVal;
@@ -734,7 +944,7 @@ function calcular() {
     if (input.modoPeriodo === 'manual') {
       input.periodo = parseFloat(document.getElementById('periodo-manual-val').value);
       if (isNaN(input.periodo) || input.periodo <= 0) {
-        alert('Período manual debe ser positivo.');
+        showToast('El período manual debe ser positivo.', 'error');
         return;
       }
     }
@@ -746,7 +956,7 @@ function calcular() {
       input.customNombre = document.getElementById('custom-nombre').value || null;
       input.customRef = document.getElementById('custom-ref').value || null;
       if (isNaN(input.customR) || isNaN(input.customOmega) || isNaN(input.customCd)) {
-        alert('Ingresá valores válidos para R, Ω₀ y Cd.');
+        showToast('Ingresá valores válidos para R, Ω₀ y Cd.', 'error');
         return;
       }
     }
@@ -789,14 +999,17 @@ function renderCalcResults(result) {
   if (!result.valido) {
     container.innerHTML = html;
     document.getElementById('btn-pdf').style.display = 'none';
+    document.getElementById('btn-share').style.display = 'none';
     document.getElementById('spectrum-section').style.display = 'none';
     return;
   }
   
   if (result.input.tipoEstructura === 'edificio' || result.input.tipoEstructura === 'infra') {
     html += renderResultadosEdificio(result);
-    renderSpectrum(result);
+    // El contenedor debe estar visible ANTES de crear el chart: Chart.js
+    // mide el contenedor al construirse y, si está display:none, queda en 0×0.
     document.getElementById('spectrum-section').style.display = 'block';
+    renderSpectrum(result);
   } else if (result.input.tipoEstructura === 'vivienda') {
     html += renderResultadosVivienda(result);
     document.getElementById('spectrum-section').style.display = 'none';
@@ -811,6 +1024,7 @@ function renderCalcResults(result) {
 
   container.innerHTML = html;
   document.getElementById('btn-pdf').style.display = 'block';
+  document.getElementById('btn-share').style.display = 'block';
 }
 
 function renderAdvertencias(advertencias) {
@@ -1016,7 +1230,15 @@ function renderSpectrum(result) {
   const canvas = document.getElementById('spectrum-chart');
   canvas.style.width = '100%';
   canvas.style.height = '200px';
-  
+
+  // El contenedor (#spectrum-section) suele pasar de display:none a visible en
+  // este mismo tick (renderCalcResults lo muestra justo antes de llamarnos). Si
+  // construimos el chart antes de que el navegador haga el layout, Chart.js mide
+  // el contenedor en 0×0, deja el canvas fijado en 0px y el espectro queda en
+  // blanco (no se recupera ni con resize()). Forzamos un reflow leyendo
+  // offsetHeight para que el contenedor tenga dimensiones reales antes de crear.
+  void canvas.parentElement.offsetHeight;
+
   const puntos = SismicCalc.generarEspectro(
     result.SDS, result.SD1, result.T0, result.Ts, result.TL, 4.0
   );
@@ -1077,7 +1299,7 @@ function renderSpectrum(result) {
 
 async function descargarPDF() {
   if (!lastResult || !lastCoord) {
-    alert('Primero ejecutá un cálculo.');
+    showToast('Primero ejecutá un cálculo.', 'error');
     return;
   }
   const btn = document.getElementById('btn-pdf');
@@ -1089,7 +1311,7 @@ async function descargarPDF() {
     const filename = `SismoPanama_LMM_${lastCoord.lat.toFixed(4)}_${lastCoord.lng.toFixed(4)}_${Date.now()}.pdf`;
     doc.save(filename);
   } catch (err) {
-    alert('Error generando PDF: ' + err.message);
+    showToast('Error generando el PDF: ' + err.message, 'error');
     console.error(err);
   } finally {
     btn.textContent = originalText;
@@ -1129,3 +1351,5 @@ window.setEspectroMode = setEspectroMode;
 window.onModoPeriodoChange = onModoPeriodoChange;
 window.onTipoGeoChange = onTipoGeoChange;
 window.onMetodoKhChange = onMetodoKhChange;
+window.copyShareLink = copyShareLink;
+window.toggleLegend = toggleLegend;

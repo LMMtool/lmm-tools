@@ -1,14 +1,19 @@
 {
   "active_version": "v1.0",
   "available_versions": ["v1.0"],
-  "app_version": "v2.0.2",
+  "app_version": "v2.1",
   "source": "REP-2021 (Reglamento Estructural Panameño) + Manual de Geotecnia REP-21",
   "source_legal": "Gaceta Oficial Digital N° 29594-A, 5 de agosto de 2022. Resolución JTIA-020-2022.",
   "published": "2026-05-15",
-  "last_updated": "2026-05-20",
+  "last_updated": "2026-06-12",
   "developer": "LMM Ingeniería",
   "license": "MIT",
   "changelog": [
+    {
+      "version": "v2.1",
+      "date": "2026-06-12",
+      "notes": "MÓVIL Y UX. 1) Responsive reescrito: scroll natural en celular (en vez del split fijo), inputs a 16px (sin zoom de iOS), header compacto sin recorte, leyenda como bloque bajo el mapa. 2) FIX: el espectro de diseño quedaba en blanco en el primer cálculo (Chart.js se construía con el contenedor oculto). 3) UX: notificaciones tipo toast en vez de alert(), indicador de carga del mapa con estado de error, leyenda colapsable. 4) Compartir: enlace permanente que reproduce la consulta o el cálculo (coordenada + parámetros en la URL). 5) Marca/SEO: imagen para redes (Open Graph/WhatsApp), favicon, theme-color, cache-busting de assets."
+    },
     {
       "version": "v2.0.2",
       "date": "2026-05-20",
