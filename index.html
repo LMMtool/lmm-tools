@@ -10,15 +10,25 @@
 <link rel="canonical" href="https://lmmtool.github.io/">
 <meta name="theme-color" content="#1E3A5F">
 
+<!-- Favicons -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
 <!-- Open Graph / Twitter -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="LMM Ingeniería | Apps técnicas: REP-21 e InspectaPro">
 <meta property="og:description" content="Apps web para ingeniería: REP-21 para cálculo sísmico estructural e InspectaPro para inspección de obra. Más herramientas hidráulicas y viales.">
 <meta property="og:url" content="https://lmmtool.github.io/">
+<meta property="og:image" content="https://lmmtool.github.io/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="LMM Ingeniería — apps técnicas: REP-21 e InspectaPro. Por Ing. Luis Márquez.">
 <meta property="og:locale" content="es_LA">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="LMM Ingeniería | Apps técnicas: REP-21 e InspectaPro">
 <meta name="twitter:description" content="REP-21 (cálculo sísmico) e InspectaPro (inspección de obra), más herramientas hidráulicas y viales.">
+<meta name="twitter:image" content="https://lmmtool.github.io/og-image.png">
 
 <!-- ============================================================ -->
 <!-- GOOGLE ANALYTICS 4 · REEMPLAZAR G-XXXXXXXXXX por tu ID real  -->
@@ -1319,6 +1329,40 @@ footer{
   .search-box{max-width:100%}
 }
 </style>
+
+<!-- Datos estructurados · marca y autoría -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://lmmtool.github.io/#org",
+      "name": "LMM Ingeniería",
+      "url": "https://lmmtool.github.io/",
+      "logo": "https://lmmtool.github.io/og-image.png",
+      "image": "https://lmmtool.github.io/og-image.png",
+      "email": "lmarquez@lmmingenieria.com",
+      "areaServed": "Latinoamérica",
+      "founder": {
+        "@type": "Person",
+        "name": "Luis Márquez",
+        "jobTitle": "Ingeniero",
+        "sameAs": "https://www.linkedin.com/in/luis-m%C3%A1rquezlm/es/"
+      },
+      "knowsAbout": ["Análisis sísmico", "REP-2021", "Inspección de obra", "Hidráulica", "Infraestructura vial"]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://lmmtool.github.io/#website",
+      "url": "https://lmmtool.github.io/",
+      "name": "LMM Ingeniería",
+      "inLanguage": "es",
+      "publisher": { "@id": "https://lmmtool.github.io/#org" }
+    }
+  ]
+}
+</script>
 </head>
 <body>
 
