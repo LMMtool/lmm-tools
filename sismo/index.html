@@ -40,7 +40,7 @@
 <meta name="twitter:image" content="https://lmmtool.github.io/sismo/og-image.png">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="style.css?v=2.1"/>
+<link rel="stylesheet" href="style.css?v=2.2"/>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
@@ -83,9 +83,11 @@
   </div>
   <div class="header-right">
     <span class="subtitle">REP-21 · LMM Ingeniería</span>
-    <a href="#" onclick="showModal('modal-metodologia'); return false;">Metodología</a>
-    <a href="#" onclick="showModal('modal-glosario'); return false;">Glosario</a>
-    <a href="#" onclick="showModal('modal-acerca'); return false;">Acerca de</a>
+    <a class="hdr-sec" href="#" onclick="showModal('modal-metodologia'); return false;">Metodología</a>
+    <a class="hdr-sec" href="#" onclick="showModal('modal-glosario'); return false;">Glosario</a>
+    <a class="hdr-sec" href="#" onclick="showModal('modal-acerca'); return false;">Acerca de</a>
+    <button class="header-share" type="button" onclick="compartirApp()" title="Compartir esta calculadora">⤤ Compartir</button>
+    <a class="header-cta" href="../" title="Ver todas las herramientas y apps de LMM Ingeniería">Más herramientas ↗</a>
   </div>
 </header>
 
@@ -488,6 +490,34 @@
 <script src="lib/seismic-calc.js?v=2.1"></script>
 <script src="lib/pdf-gen.js?v=2.1"></script>
 <script src="app.js?v=2.1"></script>
+
+<!-- Compartir la calculadora (Web Share en móvil, copiar enlace en escritorio) -->
+<script>
+function compartirApp(){
+  var url = 'https://lmmtool.github.io/sismo/';
+  var titulo = 'Calculadora sísmica REP-21 — gratis · LMM Ingeniería';
+  var texto = 'Calculadora sísmica REP-2021 para Panamá, gratis y sin instalar:';
+  if (navigator.share){
+    navigator.share({ title: titulo, text: texto, url: url })
+      .then(function(){ if(typeof gtag==='function') gtag('event','share',{method:'web_share',content_type:'app'}); })
+      .catch(function(){});
+  } else if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(texto + ' ' + url).then(
+      function(){ toastCompartir('Enlace copiado ✓'); if(typeof gtag==='function') gtag('event','share',{method:'copy_link',content_type:'app'}); },
+      function(){ window.prompt('Copia este enlace para compartir:', url); }
+    );
+  } else {
+    window.prompt('Copia este enlace para compartir:', url);
+  }
+}
+function toastCompartir(msg){
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1E3A5F;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;z-index:99999;box-shadow:0 4px 14px rgba(0,0,0,0.3);';
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2200);
+}
+</script>
 
 </body>
 </html>
