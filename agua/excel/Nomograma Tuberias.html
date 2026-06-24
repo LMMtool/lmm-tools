@@ -266,5 +266,38 @@ document.getElementById('cN').querySelector('.ref').textContent=nm.nR;}
 document.addEventListener('DOMContentLoaded',()=>{draw();
 const s=document.getElementById('chart');s.addEventListener('mousemove',onMv);s.addEventListener('mouseleave',onLv);});
 </script>
+<!-- Barra LMM: compartir + más herramientas (autocontenida) -->
+<div class="lmmbar">
+  <button class="lmmbar-btn lmmbar-share" type="button" onclick="lmmCompartir()" title="Compartir esta herramienta">⤤ Compartir</button>
+  <a class="lmmbar-btn lmmbar-cta" href="../../" title="Ver todas las apps y herramientas de LMM Ingeniería">Más herramientas ↗</a>
+</div>
+<style>
+.lmmbar{position:fixed;right:14px;bottom:14px;z-index:99998;display:flex;gap:8px;font-family:Arial,Helvetica,sans-serif}
+.lmmbar-btn{font-size:12px;font-weight:700;padding:9px 14px;border-radius:8px;cursor:pointer;text-decoration:none;border:1px solid transparent;box-shadow:0 4px 14px rgba(0,0,0,.18);transition:transform .15s,box-shadow .15s;white-space:nowrap;line-height:1}
+.lmmbar-btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.26)}
+.lmmbar-cta{background:#2D6A9F;color:#fff !important}
+.lmmbar-cta:hover{background:#1E3A5F}
+.lmmbar-share{background:#fff;color:#1E3A5F;border-color:#cfd8e3}
+.lmmbar-share:hover{background:#f1f5f9}
+@media(max-width:560px){.lmmbar{right:10px;bottom:10px;gap:6px}.lmmbar-btn{font-size:11px;padding:8px 11px}}
+</style>
+<script>
+function lmmCompartir(){
+  var url=location.origin+location.pathname;
+  var titulo=document.title||'Herramienta — LMM Ingeniería';
+  var texto='Herramienta de ingeniería gratis de LMM Ingeniería:';
+  if(navigator.share){
+    navigator.share({title:titulo,text:texto,url:url}).then(function(){lmmGaShare('web_share');}).catch(function(){});
+  } else if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(texto+' '+url).then(function(){lmmToast('Enlace copiado ✓');lmmGaShare('copy_link');},function(){window.prompt('Copia este enlace:',url);});
+  } else { window.prompt('Copia este enlace:',url); }
+}
+function lmmGaShare(m){ if(typeof gtag==='function'){ gtag('event','share',{method:m,content_type:'tool'}); } }
+function lmmToast(msg){
+  var t=document.createElement('div');t.textContent=msg;
+  t.style.cssText='position:fixed;right:14px;bottom:64px;background:#1E3A5F;color:#fff;padding:9px 16px;border-radius:6px;font:600 13px Arial,sans-serif;z-index:99999;box-shadow:0 4px 14px rgba(0,0,0,.3)';
+  document.body.appendChild(t);setTimeout(function(){t.remove();},2200);
+}
+</script>
 </body>
 </html>
